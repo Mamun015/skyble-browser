@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title data-i18n="title">হোম</title>
+<style>
+  :root{
+    --bg:#FFFFFF; --surface:#F3F7F5; --text:#0D1412; --muted:#667471;
+    --accent:#007A5A; --red:#f42a41; --line:#E4EBE7; --shadow:0 1px 2px rgba(13,20,18,.05);
+  }
+  html.dark{
+    --bg:#080B0A; --surface:#121715; --text:#EAF1EE; --muted:#8D9A95;
+    --accent:#34D399; --line:#1F2724; --shadow:none;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg)}
+  body{
+    color:var(--text);padding:20px 16px 36px;
+    font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;
+    transition:background .2s;
+  }
+  .head{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .logo{
+    width:46px;height:46px;border-radius:14px;flex:none;display:block;
+    box-shadow:var(--shadow);
+  }
+  .head h1{margin:0;font-size:17px;font-weight:700;letter-spacing:.2px}
+  .head p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+  form{
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:20px;padding:5px 5px 5px 15px;
+  }
+  form svg{flex:none;opacity:.5}
+  input{
+    flex:1;border:0;background:transparent;color:var(--text);
+    font-size:15px;font-family:inherit;outline:none;padding:11px 0;
+  }
+  input::placeholder{color:var(--muted)}
+  button{
+    border:0;background:var(--accent);color:#fff;font-family:inherit;
+    font-size:14px;font-weight:600;padding:11px 18px;border-radius:15px;
+  }
+  button:active{transform:scale(.97)}
+  h2{
+    font-size:12px;color:var(--muted);font-weight:600;
+    margin:28px 0 12px;letter-spacing:.3px;
+  }
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .tile{
+    display:flex;flex-direction:column;align-items:center;gap:7px;
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:16px;padding:13px 4px 11px;text-decoration:none;color:var(--text);
+  }
+  .tile:active{transform:scale(.96)}
+  .tile .ico{font-size:21px;line-height:1;height:22px}
+  .tile .fav{width:26px;height:26px;border-radius:8px;display:block;object-fit:contain}
+  .tile .nm{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.25}
+  .recent a{
+    display:block;padding:13px 0;border-bottom:1px solid var(--line);
+    text-decoration:none;color:var(--text);font-size:14px;
+  }
+  .recent a:last-child{border-bottom:0}
+  .recent .u{display:block;font-size:11px;color:var(--muted);margin-top:3px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .recent .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .empty{font-size:12.5px;color:var(--muted);line-height:1.7}
+  footer{margin-top:34px;text-align:center;font-size:11px;color:var(--muted)}
+  footer b{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <img class="logo" src="icon.png" alt="Skyble Browser" id="logo">
+    <div>
+      <h1 data-i18n="brand">Skyble Browser</h1>
+      <p data-i18n="subtitle">দ্রুত, সহজ, বাংলায়</p>
+    </div>
+  </div>
+
+  <form onsubmit="event.preventDefault();search()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+    </svg>
+    <input id="q" type="search" data-i18n-placeholder="placeholder" placeholder="গুগলে সার্চ করুন" autocomplete="off" enterkeyhint="search">
+    <button type="submit" data-i18n="button">খুঁজুন</button>
+  </form>
+
+  <h2 data-i18n="fav">প্রিয় সাইট</h2>
+  <div class="tiles" id="tiles">
+    <a class="tile" href="https://www.prothomalo.com"><span class="ico">📰</span><span class="nm" data-i18n="t1">প্রথম আলো</span></a>
+    <a class="tile" href="https://www.kalerkantho.com"><span class="ico">🗞️</span><span class="nm" data-i18n="t2">কালের কণ্ঠ</span></a>
+    <a class="tile" href="https://bangla.bdnews24.com"><span class="ico">📻</span><span class="nm" data-i18n="t3">বিডিনিউজ</span></a>
+    <a class="tile" href="https://bn.wikipedia.org"><span class="ico">📚</span><span class="nm" data-i18n="t4">উইকিপিডিয়া</span></a>
+    <a class="tile" href="https://m.youtube.com"><span class="ico">▶️</span><span class="nm" data-i18n="t5">ইউটিউব</span></a>
+    <a class="tile" href="https://m.facebook.com"><span class="ico">📘</span><span class="nm" data-i18n="t6">ফেসবুক</span></a>
+    <a class="tile" href="https://mail.google.com"><span class="ico">✉️</span><span class="nm" data-i18n="t7">জিমেইল</span></a>
+    <a class="tile" href="https://www.banglanews24.com"><span class="ico">📡</span><span class="nm" data-i18n="t8">বাংলানিউজ</span></a>
+  </div>
+
+  <h2 data-i18n="recent">সাম্প্রতিক</h2>
+  <div class="recent" id="recent">
+    <p class="empty" id="empty" data-i18n="empty">এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।</p>
+  </div>
+
+  <footer data-i18n-html="footer">Skyble Browser <b>১.০.০</b> · Made in Bangladesh</footer>
+
+<script>
+  var I18N = {
+    bn: {
+      title: "হোম",
+      brand: "Skyble Browser",
+      subtitle: "দ্রুত, সহজ, বাংলায়",
+      placeholder: "গুগলে সার্চ করুন",
+      button: "খুঁজুন",
+      fav: "প্রিয় সাইট",
+      recent: "সাম্প্রতিক",
+      empty: "এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।",
+      footer: "Skyble Browser <b>১.০.০</b> · Made in Bangladesh",
+      t1: "প্রথম আলো", t2: "কালের কণ্ঠ", t3: "বিডিনিউজ", t4: "উইকিপিডিয়া",
+      t5: "ইউটিউব", t6: "ফেসবুক", t7: "জিমেইল", t8: "বাংলানিউজ"
+    },
+    en: {
+      title: "Home",
+      brand: "Skyble Browser",
+      subtitle: "Fast, simple, in Bengali",
+      placeholder: "Search on Google",
+      button: "Search",
+      fav: "Favourite sites",
+      recent: "Recent",
+      empty: "Nothing here yet. Type above to start.",
+      footer: "Skyble Browser <b>1.0.0</b> · Made in Bangladesh",
+      t1: "Prothom Alo", t2: "Kaler Kantho", t3: "BDNews24", t4: "Wikipedia",
+      t5: "YouTube", t6: "Facebook", t7: "Gmail", t8: "Banglanews"
+    }
+  };
+
+  var LANG = "bn";
+
+  function readEnv() {
+    var src = (location.search || "") + "&" + (location.hash || "");
+    var m = /[?&#]lang=([^&#]*)/.exec(src);
+    if (!m) m = /#(bn|en)\b/.exec(location.hash || "");
+    LANG = "bn";
+    if (m) {
+      var v = decodeURIComponent(m[1]).toLowerCase();
+      if (v.indexOf("en") === 0) LANG = "en";
+    }
+    var dark = (location.hash || "").indexOf("dark") >= 0;
+    document.documentElement.className = dark ? "dark" : "";
+  }
+
+  function applyLang() {
+    var d = I18N[LANG] || I18N.bn;
+    document.documentElement.lang = LANG;
+    var i;
+    var nodes = document.querySelectorAll("[data-i18n]");
+    for (i = 0; i < nodes.length; i++) {
+      var k = nodes[i].getAttribute("data-i18n");
+      if (d[k] != null) nodes[i].textContent = d[k];
+    }
+    var htmlNodes = document.querySelectorAll("[data-i18n-html]");
+    for (i = 0; i < htmlNodes.length; i++) {
+      var hk = htmlNodes[i].getAttribute("data-i18n-html");
+      if (d[hk] != null) htmlNodes[i].innerHTML = d[hk];
+    }
+    var ph = document.querySelectorAll("[data-i18n-placeholder]");
+    for (i = 0; i < ph.length; i++) {
+      var pk = ph[i].getAttribute("data-i18n-placeholder");
+      if (d[pk] != null) ph[i].setAttribute("placeholder", d[pk]);
+    }
+    document.title = d.title;
+    var logo = document.getElementById("logo");
+    if (logo) logo.setAttribute("alt", d.brand);
+  }
+
+  readEnv();
+  applyLang();
+  window.addEventListener("hashchange", function () {
+    readEnv();
+    applyLang();
+  });
+
+  function search() {
+    var q = document.getElementById("q").value.trim();
+    if (!q) return;
+    location.href = "skyble://search?q=" + encodeURIComponent(q);
+  }
+
+  window.setSites = function (list) {
+    if (!list || !list.length) return;
+    var box = document.getElementById("tiles");
+    if (!box) return;
+    box.innerHTML = "";
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      var a = document.createElement("a");
+      a.className = "tile";
+      a.href = s.u;
+      var host = "";
+      try { host = new URL(s.u).hostname.replace(/^www\./, ""); } catch (e) { }
+      var img = document.createElement("img");
+      img.className = "fav";
+      img.alt = "";
+      img.src = "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(host);
+      img.onerror = function () {
+        var fb = document.createElement("span");
+        fb.className = "ico";
+        fb.textContent = "🌐";
+        if (this.parentNode) this.parentNode.replaceChild(fb, this);
+      };
+      a.appendChild(img);
+      var nm = document.createElement("span");
+      nm.className = "nm";
+      nm.textContent = s.n;
+      a.appendChild(nm);
+      box.appendChild(a);
+    }
+  };
+
+  window.setRecent = function (items) {
+    if (!items || !items.length) return;
+    var box = document.getElementById("recent");
+    var empty = document.getElementById("empty");
+    if (empty) empty.style.display = "none";
+    for (var i = 0; i < items.length; i++) {
+      var a = document.createElement("a");
+      a.href = items[i].u;
+      var t = document.createElement("span");
+      t.className = "t";
+      t.textContent = items[i].t;
+      var u = document.createElement("span");
+      u.className = "u";
+      u.textContent = items[i].u.replace(/^https?:\/\//, "");
+      a.appendChild(t);
+      a.appendChild(u);
+      box.appendChild(a);
+    }
+  };
+</script>
+</body>
+</html>
