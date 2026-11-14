@@ -7,7 +7,7 @@ SDK="$PWD/sdk"
 AJ="$SDK/android.jar"
 R8="$SDK/r8.jar"
 OUT="$PWD/build"
-NAME="SkybleBrowser-1.0.0.apk"
+NAME="SkybleBrowser-1.0.1.apk"
 
 rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex"

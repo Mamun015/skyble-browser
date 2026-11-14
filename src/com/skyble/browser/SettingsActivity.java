@@ -32,7 +32,7 @@ public class SettingsActivity extends Activity {
     private SharedPreferences prefs;
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "1.0.1";
     private LinearLayout list;
 
     @Override
@@ -189,13 +189,17 @@ public class SettingsActivity extends Activity {
                 prefs.getBoolean("darkpages", true), "darkpages"));
 
         list.addView(section(Lang.t("ব্রাউজিং")));
-        list.addView(switchRow("translate", Lang.t("বাংলায় অনুবাদ"), prefs.getBoolean("autotranslate", true), "autotranslate"));
         list.addView(switchRow("code", Lang.t("জাভাস্ক্রিপ্ট"), prefs.getBoolean("js", true), "js"));
         list.addView(switchRow("image", Lang.t("ছবি লোড"), prefs.getBoolean("images", true), "images"));
         list.addView(switchRow("tab", Lang.t("লিংক নতুন ট্যাবে"), prefs.getBoolean("newtab", false), "newtab"));
         list.addView(switchRow("history", Lang.t("শেষ ট্যাব ফিরিয়ে আনুন"),
                 Lang.t("ব্রাউজার চালু হলে আগের ট্যাব ফিরে আসে"),
                 prefs.getBoolean("restore", true), "restore"));
+
+        list.addView(section(Lang.t("এআই")));
+        list.addView(switchRow("translate", Lang.t("বাংলায় অনুবাদ"),
+                Lang.t("ইংরেজি পেজ নিজে থেকেই বাংলায়"),
+                prefs.getBoolean("autotranslate", false), "autotranslate"));
 
         list.addView(section(Lang.t("ডেটা")));
         list.addView(row("history", Lang.t("ইতিহাস মুছুন"), null, new Runnable() {

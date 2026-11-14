@@ -2,7 +2,7 @@ package com.skyble.browser;
 
 import android.content.SharedPreferences;
 
-/** অ্যাপের দুই ভাষা: বাংলা (ডিফল্ট) আর ইংরেজি। */
+/** অ্যাপের দুই ভাষা: ইংরেজি (ডিফল্ট) আর বাংলা। */
 public class Lang {
 
     private static boolean en = false;
@@ -20,6 +20,7 @@ public class Lang {
         EN.put("<body><div style='font-size:40px'>📡</div><h2>পেজ লোড হয়নি</h2>", "<body><div style='font-size:40px'>📡</div><h2>Page not loaded</h2>");
         EN.put("<p>ইন্টারনেট সংযোগ দেখুন, তারপর আবার চেষ্টা করুন।</p>", "<p>Check your internet connection, then try again.</p>");
         EN.put("অ", "A");
+        EN.put("এআই", "AI");
         EN.put("অনুবাদ", "Translate");
         EN.put("অ্যাপ", "App");
         EN.put("অ্যাপ সম্পর্কে", "About app");
@@ -203,7 +204,7 @@ public class Lang {
     }
 
     public static void init(SharedPreferences p) {
-        en = p != null && "en".equals(p.getString("lang", "bn"));
+        en = p == null || !"bn".equals(p.getString("lang", "en"));
     }
 
     public static boolean isEn() { return en; }

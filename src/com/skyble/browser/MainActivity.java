@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "1.0.1";
     private boolean autoTranslate = true;
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
@@ -188,7 +188,7 @@ public class MainActivity extends Activity {
         desktopMode = prefs.getBoolean("desktop", false);
         forceDark = T_FORCE.equals(themeKey());
         darkPages = prefs.getBoolean("darkpages", true);
-        autoTranslate = prefs.getBoolean("autotranslate", true);
+        autoTranslate = prefs.getBoolean("autotranslate", false);
         pickColors();
         syncYouTubeTheme();
 
@@ -291,7 +291,7 @@ public class MainActivity extends Activity {
             desktopMode = desk;
             if (current != null) current.reload();
         }
-        boolean tr = prefs.getBoolean("autotranslate", true);
+        boolean tr = prefs.getBoolean("autotranslate", false);
         if (tr != autoTranslate) {
             autoTranslate = tr;
             if (current != null) current.reload();
@@ -1110,14 +1110,6 @@ public class MainActivity extends Activity {
                     }
                 }));
         list.addView(themePicker());
-        list.addView(toggleRow("translate", Lang.t("বাংলায় অনুবাদ"),
-                Lang.t("ইংরেজি পেজ নিজে থেকেই বাংলায়"), autoTranslate, new OnToggle() {
-                    public void onChange(boolean on) {
-                        autoTranslate = on;
-                        prefs.edit().putBoolean("autotranslate", autoTranslate).apply();
-                        if (current != null) current.reload();
-                    }
-                }));
 
         list.addView(sectionLabel(Lang.t("ট্যাব")));
 
