@@ -11,6 +11,15 @@ A fast, light web browser for Android. Small download, quick start, no ads, no
 tracking, no account. Built on the Android System WebView so the engine stays
 current with the phone and the app stays under one megabyte.
 
+## Screenshots
+
+<p>
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="200" alt="Start page">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="200" alt="Menu">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="200" alt="Settings">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="200" alt="About">
+</p>
+
 ## Features
 
 **Browsing**
@@ -89,6 +98,7 @@ assets/home.html          start page
 assets/dark.js            dark mode for web pages
 assets/translate.js       page translation
 docs/banner.png           README banner
+fastlane/                 store listing: text, icon, screenshots
 assets/icon.png           app artwork for the start page
 res/                      icons, adaptive icon layers, strings
 build.sh                  build script
