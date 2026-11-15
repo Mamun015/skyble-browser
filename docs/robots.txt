@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mamun015.github.io/skyble-browser/sitemap.xml

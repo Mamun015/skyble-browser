@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyble Browser – fast, light, private Android browser under 1 MB</title>
+<meta name="description" content="Skyble Browser is a free, open source web browser for Android. Under 1 MB, 50 tabs, ad and tracker blocking, in-app downloads, dark mode, English and Bengali. No ads, no tracking, no account.">
+<link rel="canonical" href="https://mamun015.github.io/skyble-browser/">
+<meta name="theme-color" content="#0140ca">
+<meta name="author" content="Mamun">
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Skyble Browser">
+<meta property="og:title" content="Skyble Browser – fast, light, private Android browser">
+<meta property="og:description" content="A free, open source browser for Android under one megabyte. Tabs, ad blocking, downloads, dark mode. No ads, no tracking, no account.">
+<meta property="og:url" content="https://mamun015.github.io/skyble-browser/">
+<meta property="og:image" content="https://mamun015.github.io/skyble-browser/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Skyble Browser icon and name on a blue background">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Skyble Browser – fast, light, private Android browser">
+<meta name="twitter:description" content="Free and open source. Under 1 MB. Tabs, ad blocking, downloads, dark mode.">
+<meta name="twitter:image" content="https://mamun015.github.io/skyble-browser/og.png">
+
+<link rel="icon" href="icon.png" sizes="512x512">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="sitemap" type="application/xml" href="sitemap.xml">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Skyble Browser",
+  "alternateName": "Skyble",
+  "applicationCategory": "BrowserApplication",
+  "applicationSubCategory": "Web browser",
+  "operatingSystem": "Android 5.0 and newer",
+  "softwareVersion": "1.0.1",
+  "fileSize": "650KB",
+  "inLanguage": ["en", "bn"],
+  "description": "A small, fast web browser for Android with tabs, an ad and tracker host blocker, in-app downloads, dark mode and English or Bengali interface. Built on the Android System WebView, so the app stays under one megabyte.",
+  "url": "https://mamun015.github.io/skyble-browser/",
+  "downloadUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
+  "installUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
+  "screenshot": [
+    "https://mamun015.github.io/skyble-browser/shots/1.png",
+    "https://mamun015.github.io/skyble-browser/shots/2.png",
+    "https://mamun015.github.io/skyble-browser/shots/3.png"
+  ],
+  "softwareHelp": "https://github.com/Mamun015/skyble-browser#readme",
+  "license": "https://mozilla.org/MPL/2.0/",
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "Mamun", "url": "https://github.com/Mamun015" },
+  "sameAs": ["https://github.com/Mamun015/skyble-browser"]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is Skyble Browser free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. The app is free to download and use, with no ads, no subscription and no account. The source code is published under the Mozilla Public License 2.0." } },
+    { "@type": "Question", "name": "How big is the app?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 650 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
+    { "@type": "Question", "name": "Does it block ads?",
+      "acceptedAnswer": { "@type": "Answer", "text": "It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. It is a host blocklist, not a full filter engine, so some ads on some sites still get through." } },
+    { "@type": "Question", "name": "Can I use it in Bengali?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. The interface is English by default and a complete Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default." } },
+    { "@type": "Question", "name": "Why does Google sign-in not work?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Google blocks sign-in inside embedded browsers. The same applies to DRM protected video and a few banking sites. These are WebView limits, not app bugs." } },
+    { "@type": "Question", "name": "Which Android versions are supported?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings." } }
+  ]
+}
+</script>
+
+<style>
+:root{
+  --ink:#0b1220; --muted:#5b6b82; --line:#e2e8f0;
+  --blue:#0140ca; --blue-dark:#012f96; --sky:#eaf1ff; --bg:#ffffff;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--blue)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+
+header.nav{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);
+  backdrop-filter:saturate(150%) blur(10px);border-bottom:1px solid var(--line)}
+.nav .wrap{display:flex;align-items:center;gap:14px;height:62px}
+.nav img{width:30px;height:30px;border-radius:8px}
+.nav b{font-size:16px;letter-spacing:-.2px}
+.nav nav{margin-left:auto;display:flex;gap:18px;font-size:14px}
+.nav nav a{color:var(--muted);text-decoration:none}
+.nav nav a:hover{color:var(--blue)}
+@media(max-width:660px){.nav nav{display:none}}
+
+.hero{background:radial-gradient(900px 420px at 20% -10%,#1b5fdb 0%,#0a1a3c 55%,#050b18 100%);
+  color:#fff;padding:64px 0 56px}
+.hero .wrap{display:grid;grid-template-columns:1fr 300px;gap:44px;align-items:center}
+.hero h1{font-size:clamp(30px,5vw,46px);line-height:1.12;margin:0 0 14px;letter-spacing:-1px}
+.hero p.lead{margin:0 0 26px;font-size:18px;color:#c7d9f7;max-width:34em}
+.hero .tag{display:inline-block;font-size:13px;letter-spacing:.4px;text-transform:uppercase;
+  color:#9dc0f5;border:1px solid #2b4f8f;border-radius:999px;padding:5px 12px;margin-bottom:18px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.btn{display:inline-block;padding:13px 22px;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px}
+.btn.primary{background:#fff;color:#0a1a3c}
+.btn.primary:hover{background:#e6eeff}
+.btn.ghost{border:1px solid #3a5f9e;color:#dbe8ff}
+.btn.ghost:hover{background:#122245}
+.hero .facts{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:26px;font-size:14px;color:#9dc0f5}
+.hero .appicon{width:200px;height:200px;border-radius:44px;justify-self:center;
+  box-shadow:0 24px 60px rgba(0,0,0,.45)}
+@media(max-width:760px){.hero .wrap{grid-template-columns:1fr}.hero .appicon{width:150px;height:150px;border-radius:34px;order:-1}}
+
+section{padding:64px 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+h2{font-size:clamp(23px,3.4vw,30px);margin:0 0 10px;letter-spacing:-.5px}
+h3{font-size:17px;margin:0 0 6px}
+p.sub{color:var(--muted);margin:0 0 34px;max-width:44em}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;background:#fbfdff}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.card .k{font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--blue);margin-bottom:6px}
+
+.shots{display:flex;gap:16px;overflow-x:auto;padding:4px 0 12px;scroll-snap-type:x mandatory}
+.shots img{width:230px;flex:0 0 auto;border-radius:16px;border:1px solid var(--line);
+  scroll-snap-align:start;box-shadow:0 10px 24px rgba(10,26,60,.08)}
+.shots figure{margin:0}
+.shots figcaption{font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+@media(max-width:760px){.split{grid-template-columns:1fr}}
+ul.clean{margin:0;padding-left:20px;color:var(--muted)}
+ul.clean li{margin:7px 0}
+
+ol.steps{margin:0;padding-left:22px}
+ol.steps li{margin:12px 0}
+
+.note{background:var(--sky);border:1px solid #cfe0ff;border-radius:14px;padding:20px 22px}
+.note h3{margin-top:0}
+.note p{margin:6px 0;color:#254070}
+
+.faq details{border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px;background:#fbfdff}
+.faq summary{cursor:pointer;font-weight:600;font-size:15.5px}
+.faq p{margin:10px 0 0;color:var(--muted)}
+
+.bn{direction:ltr}
+footer{padding:40px 0 56px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center}
+footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <img src="icon.png" alt="Skyble Browser icon" width="30" height="30">
+    <b>Skyble Browser</b>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/Mamun015/skyble-browser">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <span class="tag">Free · Open source · Android</span>
+      <h1>A fast, light browser for Android that stays out of your way</h1>
+      <p class="lead">Skyble Browser is a small web browser with real tabs, ad and tracker
+        blocking, downloads, dark mode and both English and Bengali. No ads, no tracking,
+        no account, and the whole app is under one megabyte.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/Mamun015/skyble-browser/releases/latest">Download the APK</a>
+        <a class="btn ghost" href="https://github.com/Mamun015/skyble-browser">Source code</a>
+      </div>
+      <div class="facts">
+        <span>Android 5.0+</span><span>~650 KB</span><span>MPL-2.0</span><span>No ads · No trackers</span>
+      </div>
+    </div>
+    <img class="appicon" src="icon.png" alt="Skyble Browser app icon" width="200" height="200">
+  </div>
+</div>
+
+<section id="screenshots">
+  <div class="wrap">
+    <h2>What it looks like</h2>
+    <p class="sub">A start page with your favourite sites, a bottom menu within thumb reach,
+      and settings that are only one screen deep.</p>
+    <div class="shots">
+      <figure><img src="shots/1.png" alt="Skyble Browser start page with search bar, favourite sites and recent history" width="230" loading="lazy"><figcaption>Start page</figcaption></figure>
+      <figure><img src="shots/2.png" alt="Skyble Browser menu with new tab, bookmarks, history, downloads and page tools" width="230" loading="lazy"><figcaption>Menu</figcaption></figure>
+      <figure><img src="shots/3.png" alt="Skyble Browser settings for language, search engine, theme, JavaScript and translation" width="230" loading="lazy"><figcaption>Settings</figcaption></figure>
+      <figure><img src="shots/4.png" alt="About screen showing version, developer, license and trademark notice" width="230" loading="lazy"><figcaption>About</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <h2>Small app, complete browser</h2>
+    <p class="sub">Everything below is in the free build. No feature is locked, nothing asks for an account.</p>
+    <div class="grid">
+      <div class="card"><div class="k">Tabs</div><h3>Up to 50 tabs</h3>
+        <p>Each tab keeps its own history, and your open tabs come back when you reopen the app.</p></div>
+      <div class="card"><div class="k">Privacy</div><h3>Ad and tracker blocking</h3>
+        <p>Known advertising and tracking hosts are blocked before they load. No analytics, no telemetry, no advertising SDK.</p></div>
+      <div class="card"><div class="k">Reading</div><h3>Dark mode that works</h3>
+        <p>Follow the system, stay light, stay dark, or force every page dark. Sites with their own dark theme keep it.</p></div>
+      <div class="card"><div class="k">Language</div><h3>English and Bengali</h3>
+        <p>English interface by default, a full Bengali interface one tap away, plus optional translation of English pages.</p></div>
+      <div class="card"><div class="k">Downloads</div><h3>Built-in download list</h3>
+        <p>Progress, speed and cancel in one screen. Files land in the phone's normal Downloads folder.</p></div>
+      <div class="card"><div class="k">Search</div><h3>Live suggestions</h3>
+        <p>Suggestions from your search engine, plus matches from your own history and bookmarks.</p></div>
+      <div class="card"><div class="k">Tools</div><h3>Find, print, share</h3>
+        <p>Find in page, print, share a page, copy a link, desktop site mode and a default-browser shortcut.</p></div>
+      <div class="card"><div class="k">Updates</div><h3>In-app update check</h3>
+        <p>The app checks its GitHub releases and points you at the new build. Nothing installs without your tap.</p></div>
+      <div class="card"><div class="k">Size</div><h3>Under one megabyte</h3>
+        <p>No second copy of Chromium. Pages are drawn by the Android System WebView already on your phone.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="honest">
+  <div class="wrap split">
+    <div>
+      <h2>Why it is so small</h2>
+      <p>Skyble does not carry a browser engine. It uses the Android System WebView that ships
+        with your phone and updates through the Play Store. That is why the download is a few
+        hundred kilobytes instead of a hundred megabytes, and why engine security fixes arrive
+        without an app update.</p>
+      <p>It also means a few things do not work, and it is fair to say so up front:</p>
+      <ul class="clean">
+        <li>Google sign-in is blocked inside embedded browsers</li>
+        <li>DRM protected video (Netflix and similar) will not play</li>
+        <li>Some banks and a few large sites refuse WebView</li>
+        <li>Ad blocking is a host list, not a full filter engine</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>Open source, and honest about it</h3>
+      <p>The full source is on GitHub under the Mozilla Public License 2.0. You can read it,
+        build it, change it and ship your own version.</p>
+      <p>The name, the icon and the banner are brand assets and are not part of that licence.
+        Forks are asked to use their own name and icon.</p>
+      <p><a href="https://github.com/Mamun015/skyble-browser/blob/main/TRADEMARK.md">Read the brand policy</a></p>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install in three steps</h2>
+    <p class="sub">No store account needed. The APK is signed with the same key every release,
+      so updates install straight over the previous version.</p>
+    <ol class="steps">
+      <li>Download <strong>SkybleBrowser-1.0.1.apk</strong> from the
+        <a href="https://github.com/Mamun015/skyble-browser/releases/latest">latest release</a>.</li>
+      <li>Open the file. If Android asks, allow installs from your browser or file manager.</li>
+      <li>Tap Install. Open the app, then set it as your default browser from the menu if you want.</li>
+    </ol>
+    <p class="sub" style="margin-top:26px">Needs Android 5.0 or newer. Tested on Android 13 and 14.</p>
+  </div>
+</section>
+
+<section id="fdroid">
+  <div class="wrap">
+    <h2>F-Droid</h2>
+    <p class="sub">Skyble is submitted to F-Droid and is in review. F-Droid compiles the app from
+      source on its own builders and signs it with its own key, so the F-Droid build will be a
+      separate install from the APK above.</p>
+    <p class="sub">Once the listing is live, this page will link to it. Until then, the release
+      page is the only official download.</p>
+  </div>
+</section>
+
+<section id="bn" class="bn">
+  <div class="wrap">
+    <h2>বাংলায় স্কাইবল ব্রাউজার</h2>
+    <p class="sub">অ্যান্ড্রয়েডের জন্য হালকা ও দ্রুত ব্রাউজার। এক মেগাবাইটেরও কম, বাংলা ইন্টারফেস,
+      ট্যাব, বিজ্ঞাপন ব্লকার, ডাউনলোড ও রাতের মোড — সব বিনামূল্যে। কোনো বিজ্ঞাপন নেই,
+      কোনো ট্র্যাকিং নেই, অ্যাকাউন্টও লাগে না।</p>
+    <p class="sub">ইনস্টল করতে উপরের <strong>Download the APK</strong> বাটনে চাপো, ফাইলটি খুলে
+      Install দাও। সেটিংস থেকে ভাষা বাংলা করে নিতে পারবে।</p>
+  </div>
+</section>
+
+<section id="faq" class="faq">
+  <div class="wrap">
+    <h2>Questions people ask</h2>
+    <details><summary>Is Skyble Browser free?</summary>
+      <p>Yes. No ads, no subscription, no account. The source code is published under the Mozilla Public License 2.0.</p></details>
+    <details><summary>How big is the app?</summary>
+      <p>About 650 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
+    <details><summary>Does it block ads?</summary>
+      <p>It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. It is a host blocklist, not a full filter engine, so some ads on some sites still get through.</p></details>
+    <details><summary>Can I use it in Bengali?</summary>
+      <p>Yes. The interface is English by default and the Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default.</p></details>
+    <details><summary>Why does Google sign-in not work?</summary>
+      <p>Google blocks sign-in inside embedded browsers. DRM video and a few banking sites fail for the same reason. These are WebView limits, not app bugs.</p></details>
+    <details><summary>Which Android versions are supported?</summary>
+      <p>Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings.</p></details>
+    <details><summary>Where do I report a bug?</summary>
+      <p>Open an issue on <a href="https://github.com/Mamun015/skyble-browser/issues">GitHub</a>. Say what you did, what you expected and what happened.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Mamun</span>
+    <span>Source: <a href="https://github.com/Mamun015/skyble-browser">github.com/Mamun015/skyble-browser</a></span>
+    <span><a href="https://github.com/Mamun015/skyble-browser/blob/main/LICENSE">MPL-2.0</a></span>
+    <span><a href="https://github.com/Mamun015/skyble-browser/blob/main/TRADEMARK.md">Trademark</a></span>
+    <span>Made in Bangladesh</span>
+  </div>
+</footer>
+
+</body>
+</html>
