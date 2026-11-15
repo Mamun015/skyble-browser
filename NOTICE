@@ -6,5 +6,8 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-The name "Skyble Browser", "Skyble" and the app icon are not covered by
-the MPL. Do not ship a modified build under these names without permission.
+Brand assets are not covered by the MPL. The name "Skyble", the names
+"Skyble Browser" and "Skyble Browser for Android", the launcher icon,
+the home screen logo and the README banner are all rights reserved.
+A fork that ships to users must use its own name, icon and package
+name. The full policy is in TRADEMARK.md.
