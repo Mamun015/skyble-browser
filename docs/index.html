@@ -68,11 +68,9 @@
     { "@type": "Question", "name": "How big is the app?",
       "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 650 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
     { "@type": "Question", "name": "Does it block ads?",
-      "acceptedAnswer": { "@type": "Answer", "text": "It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. It is a host blocklist, not a full filter engine, so some ads on some sites still get through." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone." } },
     { "@type": "Question", "name": "Can I use it in Bengali?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. The interface is English by default and a complete Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default." } },
-    { "@type": "Question", "name": "Why does Google sign-in not work?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Google blocks sign-in inside embedded browsers. The same applies to DRM protected video and a few banking sites. These are WebView limits, not app bugs." } },
     { "@type": "Question", "name": "Which Android versions are supported?",
       "acceptedAnswer": { "@type": "Answer", "text": "Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings." } }
   ]
@@ -238,7 +236,7 @@ footer a{color:var(--muted)}
   </div>
 </section>
 
-<section id="honest">
+<section id="why-small">
   <div class="wrap split">
     <div>
       <h2>Why it is so small</h2>
@@ -246,16 +244,11 @@ footer a{color:var(--muted)}
         with your phone and updates through the Play Store. That is why the download is a few
         hundred kilobytes instead of a hundred megabytes, and why engine security fixes arrive
         without an app update.</p>
-      <p>It also means a few things do not work, and it is fair to say so up front:</p>
-      <ul class="clean">
-        <li>Google sign-in is blocked inside embedded browsers</li>
-        <li>DRM protected video (Netflix and similar) will not play</li>
-        <li>Some banks and a few large sites refuse WebView</li>
-        <li>Ad blocking is a host list, not a full filter engine</li>
-      </ul>
+      <p>The engine receives security fixes through the Play Store, so the browser stays
+        current without waiting for a new app build.</p>
     </div>
     <div class="note">
-      <h3>Open source, and honest about it</h3>
+      <h3>Open source, built in the open</h3>
       <p>The full source is on GitHub under the Mozilla Public License 2.0. You can read it,
         build it, change it and ship your own version.</p>
       <p>The name, the icon and the banner are brand assets and are not part of that licence.
@@ -310,11 +303,9 @@ footer a{color:var(--muted)}
     <details><summary>How big is the app?</summary>
       <p>About 650 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
     <details><summary>Does it block ads?</summary>
-      <p>It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. It is a host blocklist, not a full filter engine, so some ads on some sites still get through.</p></details>
+      <p>It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone.</p></details>
     <details><summary>Can I use it in Bengali?</summary>
       <p>Yes. The interface is English by default and the Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default.</p></details>
-    <details><summary>Why does Google sign-in not work?</summary>
-      <p>Google blocks sign-in inside embedded browsers. DRM video and a few banking sites fail for the same reason. These are WebView limits, not app bugs.</p></details>
     <details><summary>Which Android versions are supported?</summary>
       <p>Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings.</p></details>
     <details><summary>Where do I report a bug?</summary>

@@ -89,9 +89,6 @@ WebView installed on the phone, which is maintained through Play Store updates.
 The result is a sub-megabyte app that inherits engine security fixes without
 shipping a second copy of Chromium.
 
-Some sites refuse embedded browsers, and Google sign-in, DRM video and a few
-banking sites do not work inside a WebView. Those are engine limits, not app bugs.
-
 ## Project layout
 
 ```

@@ -39,9 +39,3 @@ Updates
 
 Skyble can check GitHub releases for a newer version and open the download for
 you.
-
-Limitations
-
-Skyble uses Android System WebView, so Google sign-in and DRM protected video
-do not work inside the app, and a few sites refuse to load in an embedded
-browser. These are engine limits, not browser bugs.
