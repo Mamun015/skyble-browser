@@ -1,0 +1,43 @@
+# Draft metadata for fdroiddata: copy to metadata/com.skyble.browser.yml
+# in a fork of https://gitlab.com/fdroid/fdroiddata before opening the merge request.
+
+Categories:
+  - Internet
+License: MPL-2.0
+AuthorName: Mamun
+AuthorEmail: mail.mamun.09@gmail.com
+WebSite: https://github.com/Mamun015/skyble-browser
+SourceCode: https://github.com/Mamun015/skyble-browser
+IssueTracker: https://github.com/Mamun015/skyble-browser/issues
+Changelog: https://github.com/Mamun015/skyble-browser/releases
+
+AutoName: Skyble Browser
+Summary: Fast, light browser with tabs, ad blocking and downloads
+Description: |-
+  A small web browser with no ads, no tracking and no account.
+
+  Tabs, bookmarks, history, ad and tracker host blocking, in-app downloads,
+  four themes including forced dark pages, English and Bengali interface, and
+  a built-in update check. The app ships no browser engine: pages are drawn by
+  the Android System WebView already installed on the device, which keeps the
+  APK under one megabyte.
+
+AntiFeatures:
+  - NonFreeNet
+
+RepoType: git
+Repo: https://github.com/Mamun015/skyble-browser.git
+
+Builds:
+  - versionName: 1.0.1
+    versionCode: 6
+    commit: v1.0.1
+    subdir: .
+    build:
+      - ANDROID_HOME=$$SDK$$ UNSIGNED=1 bash build.sh
+    output: build/aligned.apk
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.1
+CurrentVersionCode: 6

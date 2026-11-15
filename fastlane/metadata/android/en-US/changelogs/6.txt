@@ -1,0 +1,8 @@
+First public build.
+
+- English interface by default, Bengali switchable in Settings
+- New launcher icon and home screen logo
+- Page translation moved to Settings, off by default
+- Up to 50 tabs, session restore, ad and tracker host blocking
+- In-app download list with progress and speed
+- Four themes including forced dark pages

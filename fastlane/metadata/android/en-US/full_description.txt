@@ -1,0 +1,47 @@
+Skyble Browser is a small, fast web browser for Android. It has no ads, no
+tracking, no account, and no advertising SDK. The whole app is under one
+megabyte because it uses the Android System WebView that is already on your
+phone instead of shipping a second copy of Chromium.
+
+Tabs
+
+Open up to 50 tabs. Each tab keeps its own history, and your open tabs come
+back when you start the app again.
+
+Privacy
+
+Skyble blocks known advertising and tracking hosts, including doubleclick,
+googleadservices, taboola, outbrain, adsterra and several others. There is no
+analytics or telemetry of any kind. History, bookmarks, cookies, cache and
+everything else live on the phone and can be cleared from the settings screen
+in one tap. If a site presents a broken security certificate, Skyble warns you
+before the page opens and lets you decide.
+
+Reading
+
+Choose a light theme, a dark theme, follow the system setting, or force every
+web page dark. Pages that ship their own dark theme keep it. Text size can be
+set from 85% to 130%, and images or JavaScript can be switched off to save
+data.
+
+Language
+
+The interface is English by default, with a complete Bengali translation
+available in the settings. Pages written in English can be translated to
+Bengali from the AI section, off by default.
+
+Downloads
+
+Downloads started from a page show up in a built-in list with progress, speed
+and a cancel button. Files are saved to the phone's normal Downloads folder.
+
+Updates
+
+Skyble can check GitHub releases for a newer version and open the download for
+you.
+
+Limitations
+
+Skyble uses Android System WebView, so Google sign-in and DRM protected video
+do not work inside the app, and a few sites refuse to load in an embedded
+browser. These are engine limits, not browser bugs.
