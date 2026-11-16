@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.skyble.browser"
-    android:versionCode="18"
+    android:versionCode="19"
     android:versionName="1.2">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -9,6 +9,11 @@
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- হেল্পার অ্যাপ ডাউনলোড শেষের খবর পাঠাতে পারে, অন্য কেউ নয় -->
+    <permission
+        android:name="com.skyble.browser.permission.POST_DOWNLOAD"
+        android:protectionLevel="signature" />
 
     <!-- Android 11+: হেল্পার অ্যাপ ইনস্টল আছে কি না দেখা যায় -->
     <queries>
@@ -44,6 +49,15 @@
                 <data android:scheme="https" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".DownloadInbox"
+            android:exported="true"
+            android:permission="com.skyble.browser.permission.POST_DOWNLOAD">
+            <intent-filter>
+                <action android:name="com.skyble.browser.DOWNLOAD_DONE" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".SettingsActivity"

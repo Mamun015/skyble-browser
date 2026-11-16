@@ -49,6 +49,8 @@ public class MainActivity extends Activity {
     private final java.util.HashMap<Long, String[]> queueInfo = new java.util.HashMap<>();
     private final java.util.HashMap<Long, Integer> attempts = new java.util.HashMap<>();
     private final List<String[]> found = new ArrayList<>();
+    // ব্রাউজারকে একবারই খবর দেওয়া হয়, প্রতি পোলে নয়
+    private final java.util.HashSet<Long> told = new java.util.HashSet<>();
 
     private EditText linkBox;
     private Button searchButton;
@@ -339,6 +341,13 @@ public class MainActivity extends Activity {
                         if (t != null && t.length() > 0) title = t;
                         if (st == DownloadManager.STATUS_SUCCESSFUL) {
                             text = "Done · saved in Downloads";
+                            if (told.add(id)) {
+                                String[] info = queueInfo.get(id);
+                                String fname = info != null ? info[3] : title + ".mp4";
+                                android.net.Uri u = null;
+                                try { u = dm.getUriForDownloadedFile(id); } catch (Exception ignored) { }
+                                Bridge.post(MainActivity.this, fname, u, "video/mp4", total);
+                            }
                         } else if (st == DownloadManager.STATUS_FAILED) {
                             int reason = c.getInt(
                                     c.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));

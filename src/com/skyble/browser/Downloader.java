@@ -316,7 +316,7 @@ final class Downloader {
 
         Uri record = publicUri;
         if (record == null && file != null) record = Uri.fromFile(file);
-        act.addDownloadRecord(task.name, record == null ? "" : record.toString(),
+        MainActivity.addDownloadRecord(act, task.name, record == null ? "" : record.toString(),
                 task.mime, task.done);
         ACTIVE.remove(task);
         Notify.done(act, task);

@@ -143,7 +143,7 @@ final class Muxer {
             }
 
             Uri out = Downloader.publishFile(act, mf, name, "video/mp4");
-            act.addDownloadRecord(name, out == null ? "" : out.toString(),
+            MainActivity.addDownloadRecord(act, name, out == null ? "" : out.toString(),
                     "video/mp4", mf.length());
             task.done = mf.length();
         } finally {

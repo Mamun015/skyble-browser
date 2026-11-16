@@ -1595,9 +1595,16 @@ public class MainActivity extends Activity {
         }
     }
 
-    void addDownloadRecord(String name, String uri, String mime, long size) {
+    /** হেল্পার অ্যাপ থেকেও ডাকা হয়, তাই Activity ছাড়াই কাজ করে */
+    static void addDownloadRecord(Context ctx, String name, String uri, String mime, long size) {
         try {
-            JSONArray old = downloadRecords();
+            SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+            JSONArray old;
+            try {
+                old = new JSONArray(p.getString("downloads", "[]"));
+            } catch (Exception e) {
+                old = new JSONArray();
+            }
             JSONObject o = new JSONObject();
             o.put("n", name);
             o.put("u", uri);
@@ -1607,7 +1614,7 @@ public class MainActivity extends Activity {
             JSONArray out = new JSONArray();
             out.put(o);
             for (int i = 0; i < old.length() && i < 99; i++) out.put(old.get(i));
-            prefs.edit().putString("downloads", out.toString()).apply();
+            p.edit().putString("downloads", out.toString()).apply();
         } catch (Exception ignored) { }
     }
 
@@ -1845,7 +1852,12 @@ public class MainActivity extends Activity {
         row.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (uri.length() == 0) {
-                    toast(Lang.t("ফাইলটা পাওয়া যায়নি"));
+                    // হেল্পার অ্যাপের ফাইল: Downloads ফোল্ডারটা খুলে দেখানো হয়
+                    try {
+                        startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
+                    } catch (Exception e) {
+                        toast(Lang.t("ফাইলটা পাওয়া যায়নি"));
+                    }
                     return;
                 }
                 try {

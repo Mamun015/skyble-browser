@@ -76,8 +76,10 @@ final class Muxer {
                 vf = null;
             }
 
+            long bytes = mf.length();
             Uri saved = publish(ctx, mf, name);
             post(listener, "Done · saved in Downloads");
+            Bridge.post(ctx, name, saved, "video/mp4", bytes);
             done(listener, saved == null ? "" : saved.toString());
         } catch (Exception e) {
             post(listener, "Failed: " + e.getMessage());
