@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.2";
+    private static final String VERSION = "1.2.2";
     private boolean autoTranslate = true;
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
@@ -71,8 +71,13 @@ public class MainActivity extends Activity {
     private ImageView reloadIcon;
     private boolean pageLoading;
     private TextView pageTitle, tabBadge, navTabLabel, brandView, lockView, tubePill;
-    private LinearLayout rootView, bottomBar, navBar, suggestBox;
+    private LinearLayout rootView, bottomBar, navBar, suggestBox, topBarView;
     private ScrollView suggestScroll;
+    private TextView updatePill;
+    private String knownUpdate, knownApk;
+    private FrameLayout.LayoutParams suggestLp;
+    private boolean suggestTapping;
+    private int suggestScreenH, suggestKeyboardH;
     private final java.util.HashSet<String> sslAllowedHosts = new java.util.HashSet<String>();
     private String sslDialogHost;
     private final android.os.Handler suggestHandler =
@@ -322,6 +327,8 @@ public class MainActivity extends Activity {
             darkPages = dp;
             if (current != null) current.reload();
         }
+        // অ্যাপে ফিরে এলে মাঝে মাঝে নতুন ভার্সন দেখে নেয়
+        if (Updater.due(this)) checkUpdates(false);
     }
 
     @Override
@@ -347,6 +354,11 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (suggestScroll != null && suggestScroll.getVisibility() == View.VISIBLE) {
+            hideSuggestions();
+            hideKeyboard();
+            return;
+        }
         if (fullView != null) {
             exitFullscreen();
             return;
@@ -483,6 +495,7 @@ public class MainActivity extends Activity {
         rootView.setBackgroundColor(cBg);
 
         LinearLayout topBar = new LinearLayout(this);
+        topBarView = topBar;
         topBar.setOrientation(LinearLayout.VERTICAL);
         topBar.setBackgroundColor(cBg);
         topBar.setPadding(dp(12), dp(8), dp(6), dp(8));
@@ -563,11 +576,37 @@ public class MainActivity extends Activity {
         });
         urlBar.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             public void onFocusChange(View v, boolean has) {
-                if (!has) hideSuggestions();
+                if (has) return;
+                // আঙুল তালিকার সারিতে থাকলে সাথে সাথে সরাব না, নইলে ক্লিক হারিয়ে যায়
+                suggestHandler.postDelayed(new Runnable() {
+                    public void run() {
+                        if (suggestTapping || urlBar.hasFocus()) return;
+                        hideSuggestions();
+                    }
+                }, 260);
             }
         });
         addrPill.addView(urlBar, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        // নতুন ভার্সন এলে ঠিকানা বারে ছোট চিহ্ন — চাপলে আপডেটের কথা বলে
+        updatePill = new TextView(this);
+        updatePill.setTextSize(11);
+        updatePill.setTypeface(Typeface.DEFAULT_BOLD);
+        updatePill.setTextColor(cAccent);
+        updatePill.setGravity(Gravity.CENTER);
+        updatePill.setPadding(dp(8), dp(4), dp(8), dp(4));
+        updatePill.setBackground(roundedBorder(cAccentSoft, 20));
+        updatePill.setVisibility(View.GONE);
+        updatePill.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (knownUpdate != null) showUpdate(knownUpdate, knownApk, true);
+            }
+        });
+        LinearLayout.LayoutParams uplp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        uplp.rightMargin = dp(4);
+        addrPill.addView(updatePill, uplp);
 
         urlBar.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -645,13 +684,7 @@ public class MainActivity extends Activity {
         suggestScroll.addView(suggestBox, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         suggestScroll.setVisibility(View.GONE);
-        LinearLayout.LayoutParams suggestLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        suggestLp.leftMargin = dp(12);
-        suggestLp.rightMargin = dp(12);
-        suggestLp.topMargin = dp(2);
-        suggestLp.bottomMargin = dp(6);
-        rootView.addView(suggestScroll, suggestLp);
+        if (Build.VERSION.SDK_INT >= 21) suggestScroll.setElevation(dp(8));
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
@@ -706,8 +739,42 @@ public class MainActivity extends Activity {
 
         screen.addView(rootView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        // সাজানোর তালিকা পাতার ওপরে ভাসে — দেখালে নিচের কনটেন্ট নড়ে না
+        suggestLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        suggestLp.gravity = Gravity.TOP;
+        suggestLp.leftMargin = dp(12);
+        suggestLp.rightMargin = dp(12);
+        screen.addView(suggestScroll, suggestLp);
+
+        watchKeyboard();
         setContentView(screen);
         updateNavButtons();
+    }
+
+    /** কীবোর্ড নামলে ভাসমান তালিকাও সরবে */
+    private void watchKeyboard() {
+        screen.getViewTreeObserver().addOnGlobalLayoutListener(
+                new android.view.ViewTreeObserver.OnGlobalLayoutListener() {
+                    public void onGlobalLayout() {
+                        int h = screen.getHeight();
+                        if (h <= 0) return;
+                        if (h > suggestScreenH) suggestScreenH = h;
+                        boolean shrunk = h < suggestScreenH - dp(90);
+                        if (shrunk) {
+                            suggestKeyboardH = h;
+                        } else if (suggestKeyboardH > 0) {
+                            suggestKeyboardH = 0;
+                            if (suggestScroll != null
+                                    && suggestScroll.getVisibility() == View.VISIBLE) {
+                                suggestHandler.post(new Runnable() {
+                                    public void run() { hideSuggestions(); }
+                                });
+                            }
+                        }
+                    }
+                });
     }
 
     private View navItem(String iconName, String label, final Runnable action) {
@@ -3229,6 +3296,7 @@ public class MainActivity extends Activity {
     private void hideSuggestions() {
         if (suggestBox == null) return;
         suggestSeq++;
+        suggestTapping = false;
         cancelSuggestFetch();
         suggestQuery = "";
         suggestRemoteQuery = "";
@@ -3238,15 +3306,27 @@ public class MainActivity extends Activity {
         suggestBox.setVisibility(View.GONE);
     }
 
-    /** তালিকা দেখায়, উচ্চতা স্ক্রিনে ধরে এমন মাপে সীমিত রাখে */
-    private void showSuggestPanel(int rows) {
-        int h = Math.min(dp(300), rows * dp(56) + dp(2));
-        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) suggestScroll.getLayoutParams();
-        lp.height = h;
-        suggestScroll.setLayoutParams(lp);
+    /** তালিকা দেখায়, ঠিকানা বারের নিচে ভেসে; উচ্চতা ধরে স্ক্রিনে সীমিত রাখে */
+    private void showSuggestPanel() {
+        if (suggestScroll == null || suggestLp == null) return;
+        int w = screen != null ? screen.getWidth() : 0;
+        if (w <= 0) w = getResources().getDisplayMetrics().widthPixels;
+        int maxW = Math.max(dp(120), w - dp(24));
+        // আসল কনটেন্ট মেপে উচ্চতা নেওয়া হয়, তাই নিচে ফাঁকা জায়গা থাকে না
+        suggestBox.measure(View.MeasureSpec.makeMeasureSpec(maxW, View.MeasureSpec.AT_MOST),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int want = suggestBox.getMeasuredHeight() + dp(2);
+        int top = (topBarView != null ? topBarView.getBottom() : dp(56)) + dp(2);
+        int room = screen != null ? screen.getHeight() : 0;
+        if (room <= 0) room = getResources().getDisplayMetrics().heightPixels;
+        int h = Math.min(want, Math.min(dp(320), Math.max(dp(120), room - top - dp(10))));
+        suggestLp.topMargin = top;
+        suggestLp.height = h;
+        suggestScroll.setLayoutParams(suggestLp);
         suggestScroll.scrollTo(0, 0);
         suggestScroll.setVisibility(View.VISIBLE);
         suggestBox.setVisibility(View.VISIBLE);
+        suggestScroll.bringToFront();
     }
 
     /** লেখার সময় নিচে সাজেশন: ঠিকানা, সার্চ, গুগলের সাজেশন, আর আগে দেখা সাইট */
@@ -3362,7 +3442,7 @@ public class MainActivity extends Activity {
                 return;
             }
             trimLastDivider();
-            showSuggestPanel(recent);
+            showSuggestPanel();
             return;
         }
 
@@ -3374,16 +3454,18 @@ public class MainActivity extends Activity {
         addSuggestRow("search", Lang.t("সার্চ") + ": " + q, null, q);
         rows++;
 
-        // গুগলের আসল সাজেশন
+        // গুগলের আসল সাজেশন আগে
+        int googleRows = 0;
         for (String term : suggestRemote) {
-            if (rows >= 9) break;
+            if (rows >= 9 || googleRows >= 6) break;
             if (term == null || term.length() == 0) continue;
             if (term.equalsIgnoreCase(q)) continue;
             addSuggestRow("search", term, null, term);
             rows++;
+            googleRows++;
         }
 
-        // আগে দেখা সাইট
+        // তার নিচে আগে দেখা সাইট
         for (String[] item : loadList("history")) {
             if (rows >= 9) break;
             if (item == null || item.length < 2 || item[1] == null) continue;
@@ -3413,7 +3495,7 @@ public class MainActivity extends Activity {
             return;
         }
         trimLastDivider();
-        showSuggestPanel(rows);
+        showSuggestPanel();
     }
 
     /** শেষ সারির নিচে বাড়তি রেখা থাকবে না */
@@ -3459,6 +3541,21 @@ public class MainActivity extends Activity {
 
         row.addView(texts, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        // আঙুল সারিতে রাখা পর্যন্ত তালিকা লুকাবে না
+        row.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, android.view.MotionEvent e) {
+                int a = e.getActionMasked();
+                if (a == android.view.MotionEvent.ACTION_DOWN) {
+                    suggestTapping = true;
+                } else if (a == android.view.MotionEvent.ACTION_UP
+                        || a == android.view.MotionEvent.ACTION_CANCEL) {
+                    suggestHandler.post(new Runnable() {
+                        public void run() { suggestTapping = false; }
+                    });
+                }
+                return false;
+            }
+        });
         row.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 hideSuggestions();
@@ -3730,23 +3827,43 @@ public class MainActivity extends Activity {
     /** manual হলে চেক শুরুর সময়ই জানায়; ব্যাকগ্রাউন্ড চেক চুপচাপ চলে। */
     private void checkUpdates(final boolean manual) {
         if (manual) toast(Lang.t("আপডেট খোঁজা হচ্ছে…"));
-        Updater.check(this, VERSION, (version, apkUrl, failed) -> {
+        Updater.check(this, Updater.currentVersion(this), (version, apkUrl, failed) -> {
             if (failed) {
                 if (manual) toast(Lang.t("আপডেট চেক করা যায়নি"));
                 return;
             }
             if (version == null) {
+                knownUpdate = null;
+                knownApk = null;
+                prefs.edit().remove("update.shown").apply();
+                if (updatePill != null) updatePill.setVisibility(View.GONE);
                 if (manual) toast(Lang.t("আপনি সর্বশেষ সংস্করণ ব্যবহার করছেন"));
                 return;
             }
-            showUpdate(version, apkUrl);
+            showUpdate(version, apkUrl, manual);
         });
     }
 
-    private void showUpdate(final String version, final String apkUrl) {
+    private void showUpdate(final String version, final String apkUrl, boolean force) {
+        knownUpdate = version;
+        knownApk = apkUrl;
+        if (updatePill != null) {
+            updatePill.setText("↑ " + version);
+            updatePill.setVisibility(View.VISIBLE);
+        }
+        // একই ভার্সনের কথা বারবার নয় — ১২ ঘণ্টায় একবার
+        long now = System.currentTimeMillis();
+        String shown = prefs.getString("update.shown", "");
+        long when = prefs.getLong("update.shown.at", 0L);
+        if (!force && shown.equals(version) && now - when < 12L * 60 * 60 * 1000) return;
+        prefs.edit().putString("update.shown", version)
+                .putLong("update.shown.at", now).apply();
+
         String msg = Lang.isEn()
-                ? "Version " + version + " is available.\nYou are on " + VERSION + "."
-                : "সংস্করণ " + version + " এসেছে।\nএখন আপনি " + VERSION + " ব্যবহার করছেন।";
+                ? "Version " + version + " is available.\nYou are on "
+                        + Updater.currentVersion(this) + "."
+                : "সংস্করণ " + version + " এসেছে।\nএখন আপনি "
+                        + Updater.currentVersion(this) + " ব্যবহার করছেন।";
         dialog().setTitle(Lang.t("নতুন সংস্করণ পাওয়া গেছে"))
                 .setMessage(msg)
                 .setPositiveButton(Lang.t("ডাউনলোড করুন"), (d, w) -> {

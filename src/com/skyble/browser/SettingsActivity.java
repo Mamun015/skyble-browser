@@ -32,7 +32,7 @@ public class SettingsActivity extends Activity {
     private SharedPreferences prefs;
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
-    private static final String VERSION = "1.2";
+    private static final String VERSION = "1.2.2";
     private LinearLayout list;
 
     @Override
@@ -403,7 +403,7 @@ public class SettingsActivity extends Activity {
 
     private void checkUpdates() {
         toast(Lang.t("আপডেট খোঁজা হচ্ছে…"));
-        Updater.check(this, VERSION, (version, apkUrl, failed) -> {
+        Updater.check(this, Updater.currentVersion(this), (version, apkUrl, failed) -> {
             if (failed) {
                 toast(Lang.t("আপডেট চেক করা যায়নি"));
                 return;

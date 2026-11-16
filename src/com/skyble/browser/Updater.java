@@ -21,7 +21,8 @@ final class Updater {
             "https://github.com/Mamun015/skyble-browser/releases/latest";
     private static final String API =
             "https://api.github.com/repos/Mamun015/skyble-browser/releases/latest";
-    private static final long DAY = 24L * 60 * 60 * 1000;
+    /** অটো চেকের বিরতি — দিনে একবার নয়, ৬ ঘণ্টায় একবার */
+    private static final long EVERY = 6L * 60 * 60 * 1000;
 
     interface Result {
         /**
@@ -34,10 +35,19 @@ final class Updater {
 
     private Updater() { }
 
-    /** শেষ চেকের ২৪ ঘণ্টা পেরোলে true। */
+    /** শেষ চেকের ৬ ঘণ্টা পেরোলে true। */
     static boolean due(Context c) {
         SharedPreferences p = c.getSharedPreferences("skyble_browser", Context.MODE_PRIVATE);
-        return System.currentTimeMillis() - p.getLong("update.checked", 0) > DAY;
+        return System.currentTimeMillis() - p.getLong("update.checked", 0) > EVERY;
+    }
+
+    /** ইনস্টল করা অ্যাপের আসল versionName — কোডে লেখা সংখ্যা ভুল হলেও তুলনা ঠিক থাকে। */
+    static String currentVersion(Context c) {
+        try {
+            return c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "0";
+        }
     }
 
     /** ব্যাকগ্রাউন্ড থ্রেডে GitHub দেখে, ফল আসলে মেইন থ্রেডে cb ডাকে। */

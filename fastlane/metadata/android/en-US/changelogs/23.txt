@@ -1,0 +1,6 @@
+Update checks now run every six hours and also when you come back to the app,
+so a new version shows up on its own. The version number is read from the
+installed app, so the check no longer misses updates. A small up arrow in the
+address bar marks a waiting update and opens the download.
+Search suggestions float above the page and no longer push it down.
+Google suggestions come first, then your visited sites and bookmarks.
