@@ -32,7 +32,7 @@ public class SettingsActivity extends Activity {
     private SharedPreferences prefs;
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
-    private static final String VERSION = "1.0.1";
+    private static final String VERSION = "1.2";
     private LinearLayout list;
 
     @Override
@@ -192,6 +192,9 @@ public class SettingsActivity extends Activity {
         list.addView(switchRow("code", Lang.t("জাভাস্ক্রিপ্ট"), prefs.getBoolean("js", true), "js"));
         list.addView(switchRow("image", Lang.t("ছবি লোড"), prefs.getBoolean("images", true), "images"));
         list.addView(switchRow("tab", Lang.t("লিংক নতুন ট্যাবে"), prefs.getBoolean("newtab", false), "newtab"));
+        list.addView(switchRow("public", Lang.t("বিজ্ঞাপন ও ট্র্যাকার ব্লক"),
+                Lang.t("জানা বিজ্ঞাপন সার্ভার আগেই আটকে দেয়"),
+                prefs.getBoolean("adblock", true), "adblock"));
         list.addView(switchRow("history", Lang.t("শেষ ট্যাব ফিরিয়ে আনুন"),
                 Lang.t("ব্রাউজার চালু হলে আগের ট্যাব ফিরে আসে"),
                 prefs.getBoolean("restore", true), "restore"));
@@ -235,6 +238,10 @@ public class SettingsActivity extends Activity {
             }
         }));
         list.addView(row("info", Lang.t("সংস্করণ"), VERSION, null));
+        list.addView(row("bug", Lang.t("ডিবাগ লগ"), Lang.t("সমস্যা হলে পাঠাও"),
+                new Runnable() {
+                    public void run() { saveLog(); }
+                }));
         list.addView(row("refresh", Lang.t("আপডেট চেক"), null, new Runnable() {
             public void run() { checkUpdates(); }
         }));
@@ -262,6 +269,27 @@ public class SettingsActivity extends Activity {
         t.setTextColor(cMuted);
         t.setPadding(dp(8), dp(18), dp(8), dp(6));
         return t;
+    }
+
+    /** লগ ফাইলটা Downloads ফোল্ডারে রেখে দেয়, যাতে চ্যাটে পাঠানো যায় */
+    private void saveLog() {
+        Trace.init(this);
+        Trace.w("app", "log requested from settings");
+        java.io.File f = Trace.file(this);
+        if (f == null || !f.exists() || f.length() == 0) {
+            toast(Lang.t("লগ এখনো খালি"));
+            return;
+        }
+        String name = "Skyble-debug-"
+                + new java.text.SimpleDateFormat("ddMMM-HHmm", java.util.Locale.US)
+                        .format(new java.util.Date())
+                + ".txt";
+        try {
+            Downloader.publishFile(this, f, name, "text/plain");
+            toast(Lang.t("লগ সেভ হয়েছে, Downloads ফোল্ডারে দেখো: ") + name);
+        } catch (Exception e) {
+            toast(Lang.t("লগ সেভ করা যায়নি"));
+        }
     }
 
     private View row(String icon, String label, String value, final Runnable action) {

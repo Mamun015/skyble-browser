@@ -14,6 +14,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -55,7 +57,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.0.1";
+    private static final String VERSION = "1.2";
     private boolean autoTranslate = true;
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
@@ -68,7 +70,7 @@ public class MainActivity extends Activity {
     private View btnBack, btnForward;
     private ImageView reloadIcon;
     private boolean pageLoading;
-    private TextView pageTitle, tabBadge, navTabLabel;
+    private TextView pageTitle, tabBadge, navTabLabel, brandView, lockView, tubePill;
     private LinearLayout rootView, bottomBar, navBar, suggestBox;
     private ScrollView suggestScroll;
     private final java.util.HashSet<String> sslAllowedHosts = new java.util.HashSet<String>();
@@ -85,6 +87,20 @@ public class MainActivity extends Activity {
     private View overlay;
 
     private final List<Tab> tabs = new ArrayList<>();
+    private final Handler pillTick = new Handler(Looper.getMainLooper());
+    private String pillUrl;
+    /** ইউটিউব নিজের ভেতরে পেজ বদলায়, তখন onPageFinished আসে না — তাই ঠিকানা দেখতে হয় */
+    private final Runnable pillWatch = new Runnable() {
+        public void run() {
+            String u = currentUrl();
+            String v = u == null ? "" : u;
+            if (!v.equals(pillUrl)) {
+                pillUrl = v;
+                updateTubePill(u);
+            }
+            pillTick.postDelayed(this, 700);
+        }
+    };
     private final java.util.HashSet<String> httpTried = new java.util.HashSet<>();
     private int activeIndex = 0;
 
@@ -106,6 +122,7 @@ public class MainActivity extends Activity {
         String url = "";
         String lastGood = "";
         boolean loading;
+        boolean incognito;
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -178,9 +195,12 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Trace.init(this);
+        Trace.w("app", "start " + VERSION + " sdk " + android.os.Build.VERSION.SDK_INT);
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         Lang.init(prefs);
+        AdBlock.init(this);
         langEn = Lang.isEn();
         systemDark = (getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
@@ -229,6 +249,7 @@ public class MainActivity extends Activity {
     private void saveSession() {
         JSONArray arr = new JSONArray();
         for (Tab t : tabs) {
+            if (t.incognito) continue;   // প্রাইভেট ট্যাব পরের বার ফিরে আসে না
             try {
                 JSONObject o = new JSONObject();
                 String u = t.url;
@@ -305,6 +326,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        pillTick.removeCallbacksAndMessages(null);
         if (suggestHandler != null) suggestHandler.removeCallbacksAndMessages(null);
         exitFullscreen();
         for (Tab t : tabs) {
@@ -471,6 +493,7 @@ public class MainActivity extends Activity {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
 
         TextView brand = new TextView(this);
+        brandView = brand;
         brand.setText(Lang.t("Skyble Browser"));
         brand.setTextSize(13);
         brand.setTypeface(Typeface.DEFAULT_BOLD);
@@ -514,6 +537,7 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         TextView lock = new TextView(this);
+        lockView = lock;
         lock.setText("🔒");
         lock.setTextSize(12);
         lock.setPadding(dp(15), 0, dp(7), 0);
@@ -580,6 +604,33 @@ public class MainActivity extends Activity {
         addrPill.addView(reloadBox);
 
         topBar.addView(addrPill, pl);
+
+        // ইউটিউব পেজে দেখা যায়: এক চাপে ভিডিও ডাউনলোড
+        tubePill = new TextView(this);
+        tubePill.setTextSize(11);
+        tubePill.setTypeface(Typeface.DEFAULT_BOLD);
+        tubePill.setTextColor(cAccent);
+        tubePill.setGravity(Gravity.CENTER);
+        tubePill.setPadding(dp(12), dp(5), dp(12), dp(5));
+        tubePill.setBackground(roundedBorder(cAccentSoft, 20));
+        tubePill.setVisibility(View.GONE);
+        pillTick.postDelayed(pillWatch, 700);
+        tubePill.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String u = currentUrl();
+                if (Tube.videoId(u) != null) {
+                    youtubeDownload(u);
+                } else {
+                    toast(Lang.t("যেকোনো ভিডিও খুলে আবার চাপো"));
+                }
+            }
+        });
+        LinearLayout.LayoutParams tplp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        tplp.topMargin = dp(7);
+        tplp.leftMargin = dp(2);
+        topBar.addView(tubePill, tplp);
+
         rootView.addView(topBar, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -754,13 +805,18 @@ public class MainActivity extends Activity {
     }
 
     private void newTab(String url, boolean activate) {
+        newTab(url, activate, false);
+    }
+
+    private void newTab(String url, boolean activate, boolean incognito) {
         if (tabs.size() >= MAX_TABS) {
             toast(Lang.t("সর্বোচ্চ ") + MAX_TABS + Lang.t(" ট্যাব খোলা যায়"));
             return;
         }
         Tab t = new Tab();
         t.url = url;
-        t.web = buildWebView();
+        t.incognito = incognito;
+        t.web = buildWebView(incognito);
         holder.addView(t.web, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         t.web.setVisibility(View.GONE);
@@ -783,7 +839,7 @@ public class MainActivity extends Activity {
         }
         Tab t = tabs.get(index);
         if (t.web == null) {
-            t.web = buildWebView();
+            t.web = buildWebView(t.incognito);
             holder.addView(t.web, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             t.web.setVisibility(View.VISIBLE);
@@ -805,6 +861,36 @@ public class MainActivity extends Activity {
         setReloadState(t.web != null && t.loading);
         progress.setVisibility(t.web != null && t.loading ? View.VISIBLE : View.GONE);
         updateNavButtons();
+        showPrivateMark(t.incognito);
+        updateTubePill(t.url);
+    }
+
+    /** প্রাইভেট ট্যাবে উপরের নাম আর তালার চিহ্ন বদলে যায়, যাতে ভুল না হয় */
+    private void showPrivateMark(boolean on) {
+        if (brandView == null) return;
+        if (on) {
+            brandView.setText(Lang.t("প্রাইভেট"));
+            brandView.setTextColor(darkMode ? 0xFFB39DDB : 0xFF5E35B1);
+            if (lockView != null) lockView.setText("🕶");
+        } else {
+            brandView.setText(Lang.t("Skyble Browser"));
+            brandView.setTextColor(cAccent);
+            if (lockView != null) lockView.setText("🔒");
+        }
+    }
+
+    /** শেষ প্রাইভেট ট্যাব বন্ধ হলে ওই সেশনের কুকি আর ক্যাশে মুছে যায় */
+    private void clearPrivateLeftovers() {
+        for (Tab t : tabs) if (t.incognito) return;
+        try {
+            CookieManager.getInstance().removeSessionCookies(null);
+        } catch (Exception ignored) { }
+        try {
+            CookieManager.getInstance().flush();
+        } catch (Exception ignored) { }
+        try {
+            if (current != null) current.clearCache(true);
+        } catch (Exception ignored) { }
     }
 
     private void closeTab(int index) {
@@ -815,14 +901,17 @@ public class MainActivity extends Activity {
             t.web.stopLoading();
             t.web.destroy();
         }
+        boolean wasPrivate = t.incognito;
         tabs.remove(index);
         if (tabs.isEmpty()) {
             newTab(homeUrl(), true);
+            if (wasPrivate) clearPrivateLeftovers();
             return;
         }
         if (activeIndex >= index) activeIndex = Math.max(0, activeIndex - 1);
         selectTab(activeIndex);
         updateTabBadge();
+        if (wasPrivate) clearPrivateLeftovers();
     }
 
     private void showTabSwitcher() {
@@ -940,6 +1029,8 @@ public class MainActivity extends Activity {
 
             TextView name = new TextView(this);
             String label = t.title;
+            if (t.incognito) label = "🕶 " + (label == null || label.length() == 0
+                    ? Lang.t("প্রাইভেট ট্যাব") : label);
             if (label == null || label.length() == 0) {
                 label = t.url == null ? Lang.t("নতুন ট্যাব") : prettyUrl(t.url);
                 if (label.startsWith("file:")) label = Lang.t("হোম");
@@ -1070,6 +1161,9 @@ public class MainActivity extends Activity {
                 String.valueOf(loadSites().size()), new Runnable() {
                     public void run() { showSiteEditor(); }
                 }));
+        list.addView(menuRow("home", Lang.t("হোমে যোগ করুন"), null, new Runnable() {
+            public void run() { addToHome(); }
+        }));
         int running = Downloader.activeCount();
         list.addView(menuRow("download", Lang.t("ডাউনলোড"),
                 running > 0 ? running + Lang.t(" চলছে")
@@ -1094,6 +1188,9 @@ public class MainActivity extends Activity {
         list.addView(menuRow("search", Lang.t("পেজে খুঁজুন"), null, new Runnable() {
             public void run() { findInPage(); }
         }));
+        list.addView(menuRow("download", Lang.t("মিডিয়া ডাউনলোড"), null, new Runnable() {
+            public void run() { downloadMedia(); }
+        }));
         list.addView(menuRow("refresh", Lang.t("রিলোড"), null, new Runnable() {
             public void run() { if (current != null) current.reload(); }
         }));
@@ -1113,6 +1210,10 @@ public class MainActivity extends Activity {
 
         list.addView(sectionLabel(Lang.t("ট্যাব")));
 
+        list.addView(menuRow("tab", Lang.t("নতুন প্রাইভেট ট্যাব"),
+                Lang.t("ইতিহাস সেভ হয় না"), new Runnable() {
+                    public void run() { newTab(homeUrl(), true, true); }
+                }));
         list.addView(menuRow("delete", Lang.t("সব ট্যাব বন্ধ"),
                 String.valueOf(tabs.size()), new Runnable() {
                     public void run() { confirmCloseAll(); }
@@ -1660,13 +1761,15 @@ public class MainActivity extends Activity {
     }
 
     private String downloadLine(Downloader.Task t) {
+        String phase = t.phase == null || t.phase.length() == 0 ? "" : t.phase + " · ";
         if (t.total > 0) {
             long left = Math.max(0, t.total - t.done);
-            return Downloader.sizeText(t.done) + " / " + Downloader.sizeText(t.total)
+            return phase + Downloader.sizeText(t.done) + " / " + Downloader.sizeText(t.total)
                     + " · " + t.percent() + "% · " + Downloader.sizeText(t.speed)
                     + Lang.t("/s · বাকি ") + Downloader.sizeText(left);
         }
-        return Downloader.sizeText(t.done) + " · " + Downloader.sizeText(t.speed) + "/s";
+        return phase + Downloader.sizeText(t.done) + " · "
+                + Downloader.sizeText(t.speed) + "/s";
     }
 
     private void startDownloadTicker(final LinearLayout host) {
@@ -1974,6 +2077,281 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) { }
         }
         view.evaluateJavascript("window.setSites && window.setSites(" + arr.toString() + ");", null);
+    }
+
+    /** এখনকার পেজটা হোমের গ্রিডে যোগ করে */
+    private void addToHome() {
+        if (current == null) return;
+        String u = current.getUrl();
+        Tab t = tabOf(current);
+        if (!isRealPage(u)) {
+            toast(Lang.t("এই পেজটা হোমে যোগ করা যায় না"));
+            return;
+        }
+        List<String[]> sites = loadSites();
+        for (String[] s : sites) {
+            if (s[1].equals(u)) {
+                toast(Lang.t("সাইটটা আগেই হোমে আছে"));
+                return;
+            }
+        }
+        String name = t != null && t.title != null && t.title.trim().length() > 0
+                ? t.title.trim() : prettyUrl(u);
+        if (name.length() > 24) name = name.substring(0, 24).trim() + "…";
+        sites.add(new String[]{name, u});
+        saveList("sites", sites);
+        toast(Lang.t("হোমে যোগ হয়েছে"));
+        refreshHomePages();
+    }
+
+    /** খোলা থাকা সব হোম পেজে নতুন তালিকা পাঠায় */
+    private void refreshHomePages() {
+        for (Tab t : tabs) {
+            if (t.web != null && t.url != null && t.url.startsWith(HOME_URL)) injectSites(t.web);
+        }
+    }
+
+    private void removeFromHome(String url) {
+        if (url == null) return;
+        List<String[]> sites = loadSites();
+        for (int i = 0; i < sites.size(); i++) {
+            if (sites.get(i)[1].equals(url)) {
+                sites.remove(i);
+                saveList("sites", sites);
+                toast(Lang.t("হোম থেকে সরানো হয়েছে"));
+                refreshHomePages();
+                return;
+            }
+        }
+    }
+
+    /** হোম পেজের JS থেকে ডাকা হয় — লম্বা চাপে সাইট সরানোর জন্য */
+    private class HomeBridge {
+        @JavascriptInterface
+        public void remove(final String url) {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    // শুধু নিজের হোম পেজ থেকেই ডাকা হয়, বাইরের সাইট থেকে নয়
+                    if (current == null) return;
+                    String now = current.getUrl();
+                    if (now == null || !now.startsWith(HOME_URL)) return;
+                    removeFromHome(url);
+                }
+            });
+        }
+    }
+
+    // ---------------------------------------------------------------- media
+
+    /** পেজে থাকা ভিডিও/অডিও/ফাইল খুঁজে বের করে ডাউনলোড করতে দেয় */
+    private void downloadMedia() {
+        if (current == null) return;
+        final String pageUrl = current.getUrl();
+        if (Tube.videoId(pageUrl) != null) {
+            youtubeDownload(pageUrl);
+            return;
+        }
+        current.evaluateJavascript(MediaFinder.JS, new ValueCallback<String>() {
+            public void onReceiveValue(String value) {
+                // স্ট্রিম প্লেলিস্ট (m3u8/mpd) নামালে পুরো ভিডিও আসে না, তাই বাদ
+                final List<String[]> found = new ArrayList<>();
+                for (String[] m : MediaFinder.parse(value)) {
+                    if (!"stream".equals(m[1])) found.add(m);
+                }
+                if (found.isEmpty()) {
+                    toast(Lang.t("এই পেজে ডাউনলোড করার মতো ভিডিও বা অডিও নেই"));
+                    return;
+                }
+                String[] rows = new String[found.size()];
+                for (int i = 0; i < found.size(); i++) {
+                    String url = found.get(i)[0];
+                    String kind = found.get(i)[1];
+                    String label = found.get(i)[2];
+                    String size = found.get(i)[3];
+                    String host = "";
+                    try {
+                        host = String.valueOf(Uri.parse(url).getHost());
+                    } catch (Exception ignored) { }
+                    String name = MediaFinder.titleFor(kind, label);
+                    if (name.length() > 46) name = name.substring(0, 46) + "…";
+                    rows[i] = name + " · " + host + (size.length() > 0 ? " · " + size : "");
+                }
+                dialog().setTitle(Lang.t("মিডিয়া ডাউনলোড"))
+                        .setItems(rows, (d, which) -> {
+                            if (current == null) return;
+                            String url = found.get(which)[0];
+                            String kind = found.get(which)[1];
+                            Downloader.start(MainActivity.this, url,
+                                    current.getSettings().getUserAgentString(),
+                                    null, mediaMime(url, kind), 0);
+                        })
+                        .setNegativeButton(Lang.t("বাতিল"), null)
+                        .show();
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------- tube plugin
+
+    private static final String PLUGIN_PKG = "com.skyble.tube.plugin";
+    private static final String PLUGIN_ACTION = "com.skyble.tube.plugin.DOWNLOAD";
+    private static final String PLUGIN_APK_URL =
+            "https://github.com/Mamun015/skyble-browser/releases/latest/download/SkybleTubePlugin.apk";
+
+    private boolean tubePluginInstalled() {
+        try {
+            getPackageManager().getPackageInfo(PLUGIN_PKG, 0);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** ইউটিউব পেজে ডাউনলোড চাপলে: ব্রাউজারের ভেতরেই পপআপ, অ্যাপ বদলাতে হয় না */
+    private void youtubeDownload(final String url) {
+        if (url == null) return;
+        final String id = Tube.videoId(url);
+        if (id == null) return;
+        toast(Lang.t("ভিডিওর লিংক খোঁজা হচ্ছে…"));
+        new Thread(new Runnable() {
+            public void run() {
+                final List<String[]> found = Tube.resolve(id);
+                runOnUiThread(new Runnable() {
+                    public void run() { showTubeResult(found, url); }
+                });
+            }
+        }).start();
+    }
+
+    /** পপআপের তালিকা: কোয়ালিটি, সাইজ, আর হেল্পার অ্যাপের সুযোগ */
+    private void showTubeResult(final List<String[]> found, final String pageUrl) {
+        String[] rows = new String[found.size()];
+        for (int i = 0; i < found.size(); i++) {
+            rows[i] = found.get(i)[1] + (found.get(i)[2].length() > 0 ? " · " + found.get(i)[2] : "");
+        }
+        final String fileName = tubeFileName();
+        AlertDialog.Builder b = dialog();
+        if (found.isEmpty()) {
+            String why = Tube.friendlyError();
+            b.setTitle(Lang.t("ভিডিও ডাউনলোড"))
+                    .setMessage(Lang.t("এই ভিডিওটা এখন নামানো যাচ্ছে না। " +
+                            "ভিডিওটা সরানো হলে বা সার্ভার ব্লক করলে এমন হয়।")
+                            + (why.length() == 0 ? "" : "\n\n" + why));
+            if (tubePluginInstalled()) {
+                b.setPositiveButton(Lang.t("Tube অ্যাপে খোলো"), (d, w) -> launchTubePlugin(pageUrl));
+            } else {
+                b.setPositiveButton(Lang.t("হেল্পার অ্যাপ"), (d, w) -> downloadTubePlugin());
+            }
+            b.setNeutralButton(Lang.t("লিংক শেয়ার"), (d, w) -> shareLink(pageUrl));
+        } else {
+            b.setTitle(Lang.t("ভিডিও ডাউনলোড"))
+                    .setItems(rows, (d, w) -> {
+                        // বেছে নেওয়া কোয়ালিটি না নামলে Muxer নিজেই পরেরটায় নামে
+                        Muxer.start(MainActivity.this, Tube.videoId(pageUrl),
+                                found, w, fileName);
+                    })
+                    .setNeutralButton(tubePluginInstalled()
+                            ? Lang.t("Tube অ্যাপে খোলো") : Lang.t("হেল্পার অ্যাপ"),
+                            (d, w) -> {
+                                if (tubePluginInstalled()) {
+                                    launchTubePlugin(pageUrl);
+                                } else {
+                                    downloadTubePlugin();
+                                }
+                            });
+        }
+        b.setNegativeButton(Lang.t("বাতিল"), null).show();
+    }
+
+    /** "8.9 MB" টেক্সট থেকে বাইট, শুধু অগ্রগতির হিসাবের জন্য */
+    private long parseSize(String text) {
+        if (text == null) return 0;
+        try {
+            String s = text.trim().toUpperCase(java.util.Locale.US);
+            double mul = 1;
+            if (s.endsWith("KB")) { mul = 1024; s = s.substring(0, s.length() - 2); }
+            else if (s.endsWith("MB")) { mul = 1048576; s = s.substring(0, s.length() - 2); }
+            else if (s.endsWith("GB")) { mul = 1073741824; s = s.substring(0, s.length() - 2); }
+            else if (s.endsWith("B")) { s = s.substring(0, s.length() - 1); }
+            return (long) (Double.parseDouble(s.trim()) * mul);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private String tubeFileName() {
+        Tab t = active();
+        String title = t != null && t.title != null && t.title.trim().length() > 0
+                ? t.title.trim() : "video";
+        title = title.replaceAll("[\\\\/:*?\"<>|]", "_");
+        if (title.length() > 60) title = title.substring(0, 60);
+        return title + ".mp4";
+    }
+
+    private void shareLink(String url) {
+        if (url == null) return;
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.setType("text/plain");
+        i.putExtra(Intent.EXTRA_TEXT, url);
+        try {
+            startActivity(Intent.createChooser(i, Lang.t("শেয়ার করুন")));
+        } catch (Exception e) {
+            toast(Lang.t("শেয়ার করা যায়নি"));
+        }
+    }
+
+    private String currentUrl() {
+        return current == null ? null : current.getUrl();
+    }
+
+    /** হেল্পার অ্যাপের APK নামায়; ইনস্টল করতে ইউজারকে একবার ট্যাপ করতে হয় */
+    private void downloadTubePlugin() {
+        if (current == null) return;
+        Downloader.start(this, PLUGIN_APK_URL, current.getSettings().getUserAgentString(),
+                null, "application/vnd.android.package-archive", 0);
+        toast(Lang.t("ডাউনলোড শেষ হলে ফাইলটা খুলে ইনস্টল করো"));
+    }
+
+    private void launchTubePlugin(String url) {
+        if (url == null) return;
+        Intent i = new Intent(PLUGIN_ACTION);
+        i.setPackage(PLUGIN_PKG);
+        i.putExtra("url", url);
+        try {
+            startActivity(i);
+        } catch (Exception e) {
+            toast(Lang.t("হেল্পার অ্যাপ খোলা যায়নি"));
+        }
+    }
+
+    /** ইউটিউব পেজে টুলবারের ছোট বোতাম, চাপলে ডাউনলোডের পথ */
+    private void updateTubePill(String url) {
+        if (tubePill == null) return;
+        boolean site = Tube.isYouTube(url);
+        boolean video = site && Tube.videoId(url) != null;
+        tubePill.setVisibility(site ? View.VISIBLE : View.GONE);
+        if (site) tubePill.setText(video ? Lang.t("⬇ ভিডিও") : Lang.t("⬇ ডাউনলোড"));
+    }
+
+    private String mediaMime(String url, String kind) {
+        String u = url == null ? "" : url.toLowerCase(java.util.Locale.US);
+        int cut = u.indexOf('?');
+        if (cut > 0) u = u.substring(0, cut);
+        if (u.endsWith(".m3u8")) return "application/vnd.apple.mpegurl";
+        if (u.endsWith(".mpd")) return "application/dash+xml";
+        if (u.endsWith(".mp4") || u.endsWith(".m4v")) return "video/mp4";
+        if (u.endsWith(".webm")) return "video/webm";
+        if (u.endsWith(".mkv")) return "video/x-matroska";
+        if (u.endsWith(".mp3")) return "audio/mpeg";
+        if (u.endsWith(".m4a")) return "audio/mp4";
+        if (u.endsWith(".aac")) return "audio/aac";
+        if (u.endsWith(".ogg")) return "audio/ogg";
+        if (u.endsWith(".wav")) return "audio/wav";
+        if (u.endsWith(".pdf")) return "application/pdf";
+        if (u.endsWith(".zip")) return "application/zip";
+        if ("audio".equals(kind)) return "audio/mpeg";
+        if ("file".equals(kind)) return "application/octet-stream";
+        return "video/mp4";
     }
 
     private void showSiteEditor() {
@@ -2313,6 +2691,10 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- webview
 
     private WebView buildWebView() {
+        return buildWebView(false);
+    }
+
+    private WebView buildWebView(boolean incognito) {
         WebView web = new WebView(this);
         web.setBackgroundColor(cBg);
         web.setLayoutParams(new FrameLayout.LayoutParams(
@@ -2321,8 +2703,11 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(prefs.getBoolean("js", true));
         web.addJavascriptInterface(new TranslateBridge(), "BBTranslate");
-        s.setDomStorageEnabled(true);
-        s.setDatabaseEnabled(true);
+        web.addJavascriptInterface(new HomeBridge(), "BBHome");
+        s.setDomStorageEnabled(!incognito);
+        s.setDatabaseEnabled(!incognito);
+        // প্রাইভেট ট্যাব: কিছুই ফোনে জমা হয় না
+        if (incognito) s.setCacheMode(WebSettings.LOAD_NO_CACHE);
         s.setLoadsImagesAutomatically(prefs.getBoolean("images", true));
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
@@ -2352,6 +2737,24 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view,
                                                    android.webkit.WebResourceRequest request) {
                 return handleUrl(view, request.getUrl().toString());
+            }
+
+            /** পেজের ভেতরের বিজ্ঞাপন/ট্র্যাকার রিকোয়েস্ট আটকায়, মূল পেজ নয় */
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(
+                    WebView view, android.webkit.WebResourceRequest request) {
+                if (request == null || request.isForMainFrame()) return null;
+                Uri u = request.getUrl();
+                if (u == null) return null;
+                String scheme = u.getScheme();
+                if (scheme == null || (!scheme.equals("http") && !scheme.equals("https"))) return null;
+                if (!adBlockOn() || !AdBlock.isBlocked(u.getHost())) return null;
+                try {
+                    return new android.webkit.WebResourceResponse("text/plain", "utf-8",
+                            new java.io.ByteArrayInputStream(new byte[0]));
+                } catch (Exception e) {
+                    return null;
+                }
             }
 
             @Override
@@ -2388,7 +2791,10 @@ public class MainActivity extends Activity {
                     updateNavButtons();
                 }
                 if (t != null && !isAdUrl(url)) t.lastGood = url;
-                if (isRealPage(url) && !isAdUrl(url)) addHistory(t == null ? null : t.title, url);
+                if (isRealPage(url) && !isAdUrl(url) && (t == null || !t.incognito)) {
+                    addHistory(t == null ? null : t.title, url);
+                }
+                if (view == current) updateTubePill(url);
                 if (url != null && url.startsWith(HOME_URL)) {
                     injectSites(view);
                     injectRecent(view);
@@ -2481,6 +2887,18 @@ public class MainActivity extends Activity {
                 Tab t = tabOf(view);
                 if (t != null) t.title = title == null ? "" : title;
                 if (view == current) pageTitle.setText(t == null ? "" : t.title);
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message,
+                                       final android.webkit.JsResult result) {
+                dialog()
+                        .setMessage(message)
+                        .setPositiveButton(Lang.t("ঠিক আছে"), (d, w) -> result.confirm())
+                        .setNegativeButton(Lang.t("বাতিল"), (d, w) -> result.cancel())
+                        .setOnCancelListener(d -> result.cancel())
+                        .show();
+                return true;
             }
 
             @Override
@@ -2633,6 +3051,10 @@ public class MainActivity extends Activity {
         return HOME_URL + "#" + hash;
     }
 
+    private boolean adBlockOn() {
+        return prefs == null || prefs.getBoolean("adblock", true);
+    }
+
     private static final String[] AD_HOSTS = {
             "googleadservices", "googlesyndication", "doubleclick", "adservice.google",
             "pagead2", "adnxs", "taboola", "outbrain", "popads", "propellerads",
@@ -2650,6 +3072,7 @@ public class MainActivity extends Activity {
         }
         if (host == null) return false;
         host = host.toLowerCase(java.util.Locale.US);
+        if (adBlockOn() && AdBlock.isBlocked(host)) return true;
         for (String bad : AD_HOSTS) {
             if (host.contains(bad)) return true;
         }

@@ -1,0 +1,3 @@
+A stalled chunk is retried from the same byte, so a slow link no longer kills the download.
+A failed quality now names the reason (HTTP 403, network stalled) instead of failing silently.
+Notifications and the download row keep showing which step is running.

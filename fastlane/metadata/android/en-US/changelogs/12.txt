@@ -1,0 +1,3 @@
+YouTube's own page is opened in the background so its player supplies links that carry the proof of origin token.
+When a high quality file is cut short, those links are used to continue from the same byte.
+This is what NewPipe does, and it is the reason its downloads finish at 1080p.

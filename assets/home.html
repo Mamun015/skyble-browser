@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -52,11 +52,20 @@
     display:flex;flex-direction:column;align-items:center;gap:7px;
     background:var(--surface);border:1px solid var(--line);
     border-radius:16px;padding:13px 4px 11px;text-decoration:none;color:var(--text);
+    overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
   }
   .tile:active{transform:scale(.96)}
   .tile .ico{font-size:21px;line-height:1;height:22px}
   .tile .fav{width:26px;height:26px;border-radius:8px;display:block;object-fit:contain}
-  .tile .nm{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.25}
+  .tile .nm{
+    width:100%;min-height:26px;
+    font-size:10.5px;color:var(--muted);text-align:center;line-height:1.25;
+    display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+    overflow:hidden;text-overflow:ellipsis;
+    word-wrap:break-word;overflow-wrap:anywhere;
+  }
+  .tile .nm.sm{font-size:9px;line-height:1.2}
+  .tile .nm.xs{font-size:8px;line-height:1.2}
   .recent a{
     display:block;padding:13px 0;border-bottom:1px solid var(--line);
     text-decoration:none;color:var(--text);font-size:14px;
@@ -66,6 +75,8 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .recent .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   .empty{font-size:12.5px;color:var(--muted);line-height:1.7}
+  .tiles .empty{grid-column:1/-1;text-align:center;padding:6px 2px}
+  .hide{display:none}
   footer{margin-top:34px;text-align:center;font-size:11px;color:var(--muted)}
   footer b{color:var(--accent);font-weight:600}
 </style>
@@ -98,6 +109,7 @@
     <a class="tile" href="https://m.facebook.com"><span class="ico">📘</span><span class="nm" data-i18n="t6">ফেসবুক</span></a>
     <a class="tile" href="https://mail.google.com"><span class="ico">✉️</span><span class="nm" data-i18n="t7">জিমেইল</span></a>
     <a class="tile" href="https://www.banglanews24.com"><span class="ico">📡</span><span class="nm" data-i18n="t8">বাংলানিউজ</span></a>
+    <p class="empty hide" id="noSites" data-i18n="emptySites">এখনো সাইট নেই। মেনু থেকে হোমে যোগ করুন বেছে নিন।</p>
   </div>
 
   <h2 data-i18n="recent">সাম্প্রতিক</h2>
@@ -105,7 +117,7 @@
     <p class="empty" id="empty" data-i18n="empty">এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।</p>
   </div>
 
-  <footer data-i18n-html="footer">Skyble Browser <b>১.০.১</b> · Made in Bangladesh</footer>
+  <footer data-i18n-html="footer">Skyble Browser <b>1.2</b> · Made in Bangladesh</footer>
 
 <script>
   var I18N = {
@@ -118,7 +130,9 @@
       fav: "প্রিয় সাইট",
       recent: "সাম্প্রতিক",
       empty: "এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।",
-      footer: "Skyble Browser <b>১.০.১</b> · Made in Bangladesh",
+      emptySites: "এখনো সাইট নেই। মেনু থেকে হোমে যোগ করুন বেছে নিন।",
+      removeSite: "এই সাইটটা হোম থেকে সরাবেন?",
+      footer: "Skyble Browser <b>1.2</b> · Made in Bangladesh",
       t1: "প্রথম আলো", t2: "কালের কণ্ঠ", t3: "বিডিনিউজ", t4: "উইকিপিডিয়া",
       t5: "ইউটিউব", t6: "ফেসবুক", t7: "জিমেইল", t8: "বাংলানিউজ"
     },
@@ -131,7 +145,9 @@
       fav: "Favourite sites",
       recent: "Recent",
       empty: "Nothing here yet. Type above to start.",
-      footer: "Skyble Browser <b>1.0.1</b> · Made in Bangladesh",
+      emptySites: "No sites yet. Use the menu and pick Add to home.",
+      removeSite: "Remove this site from the home grid?",
+      footer: "Skyble Browser <b>1.2</b> · Made in Bangladesh",
       t1: "Prothom Alo", t2: "Kaler Kantho", t3: "BDNews24", t4: "Wikipedia",
       t5: "YouTube", t6: "Facebook", t7: "Gmail", t8: "Banglanews"
     }
@@ -174,6 +190,7 @@
     document.title = d.title;
     var logo = document.getElementById("logo");
     if (logo) logo.setAttribute("alt", d.brand);
+    fitNames(document.getElementById("tiles"));
   }
 
   readEnv();
@@ -189,16 +206,40 @@
     location.href = "skyble://search?q=" + encodeURIComponent(q);
   }
 
+  /* --- tiles ------------------------------------------------------- */
+
+  function fitNames(box) {
+    if (!box) return;
+    var nms = box.querySelectorAll(".nm");
+    for (var i = 0; i < nms.length; i++) {
+      var el = nms[i];
+      var len = (el.textContent || "").replace(/\s+/g, " ").length;
+      if (len > 22) el.classList.add("xs");
+      else if (len > 13) el.classList.add("sm");
+    }
+  }
+
   window.setSites = function (list) {
-    if (!list || !list.length) return;
     var box = document.getElementById("tiles");
     if (!box) return;
+    var items = (list && list.length) ? list : [];
     box.innerHTML = "";
-    for (var i = 0; i < list.length; i++) {
-      var s = list[i];
+    if (!items.length) {
+      var d = I18N[LANG] || I18N.bn;
+      var p = document.createElement("p");
+      p.className = "empty";
+      p.id = "noSites";
+      p.setAttribute("data-i18n", "emptySites");
+      p.textContent = d.emptySites;
+      box.appendChild(p);
+      return;
+    }
+    for (var i = 0; i < items.length; i++) {
+      var s = items[i];
       var a = document.createElement("a");
       a.className = "tile";
       a.href = s.u;
+      a.title = s.n;
       var host = "";
       try { host = new URL(s.u).hostname.replace(/^www\./, ""); } catch (e) { }
       var img = document.createElement("img");
@@ -218,6 +259,7 @@
       a.appendChild(nm);
       box.appendChild(a);
     }
+    fitNames(box);
   };
 
   window.setRecent = function (items) {
@@ -239,6 +281,113 @@
       box.appendChild(a);
     }
   };
+
+  /* --- long press to remove a tile --------------------------------- */
+
+  var LONG_PRESS_MS = 450;
+  var MOVE_TOLERANCE = 10;
+  var pressTimer = null;
+  var pressTile = null;
+  var pressX = 0;
+  var pressY = 0;
+  var suppressClick = false;
+  var lastTouchAt = 0;
+
+  function tileOf(node) {
+    while (node && node !== document) {
+      if (node.tagName === "A" && node.classList && node.classList.contains("tile")) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function stopPress() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    pressTile = null;
+  }
+
+  function startPress(tile, x, y) {
+    stopPress();
+    if (!tile) return;
+    pressTile = tile;
+    pressX = x;
+    pressY = y;
+    pressTimer = setTimeout(function () {
+      pressTimer = null;
+      longPress(tile);
+    }, LONG_PRESS_MS);
+  }
+
+  function tileUrl(tile) {
+    if (!tile) return "";
+    return tile.getAttribute("href") || tile.href || "";
+  }
+
+  function longPress(tile) {
+    var url = tileUrl(tile);
+    if (!url) return;
+    suppressClick = true;
+    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) { }
+    var d = I18N[LANG] || I18N.bn;
+    var ok = false;
+    try { ok = window.confirm(d.removeSite); } catch (e) { ok = false; }
+    if (ok && window.BBHome && typeof window.BBHome.remove === "function") {
+      try { window.BBHome.remove(url); } catch (e) { }
+    }
+  }
+
+  document.addEventListener("touchstart", function (e) {
+    lastTouchAt = Date.now();
+    suppressClick = false;
+    var t = tileOf(e.target);
+    if (!t) { stopPress(); return; }
+    var p = e.touches && e.touches[0];
+    startPress(t, p ? p.clientX : 0, p ? p.clientY : 0);
+  }, { passive: true });
+
+  document.addEventListener("touchmove", function (e) {
+    if (!pressTile) return;
+    var p = e.touches && e.touches[0];
+    if (!p) return;
+    if (Math.abs(p.clientX - pressX) > MOVE_TOLERANCE ||
+        Math.abs(p.clientY - pressY) > MOVE_TOLERANCE) stopPress();
+  }, { passive: true });
+
+  document.addEventListener("touchend", stopPress, { passive: true });
+  document.addEventListener("touchcancel", stopPress, { passive: true });
+
+  document.addEventListener("mousedown", function (e) {
+    if (Date.now() - lastTouchAt < 800) return;
+    suppressClick = false;
+    var t = tileOf(e.target);
+    if (!t) { stopPress(); return; }
+    startPress(t, e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mousemove", function (e) {
+    if (!pressTile) return;
+    if (Math.abs(e.clientX - pressX) > MOVE_TOLERANCE ||
+        Math.abs(e.clientY - pressY) > MOVE_TOLERANCE) stopPress();
+  });
+
+  document.addEventListener("mouseup", stopPress);
+  document.addEventListener("mouseleave", stopPress);
+
+  document.addEventListener("click", function (e) {
+    if (!suppressClick) return;
+    suppressClick = false;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+  }, true);
+
+  document.addEventListener("contextmenu", function (e) {
+    if (tileOf(e.target)) e.preventDefault();
+  });
+
+  document.addEventListener("dragstart", function (e) {
+    if (tileOf(e.target)) e.preventDefault();
+  });
 </script>
 </body>
 </html>

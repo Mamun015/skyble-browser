@@ -1,0 +1,3 @@
+Before downloading, the app tests six YouTube clients and keeps the one whose link still works deep inside the file.
+The token page is now the phone page, which carries its player data in the HTML.
+The log names every client and whether its link passed the deep check.

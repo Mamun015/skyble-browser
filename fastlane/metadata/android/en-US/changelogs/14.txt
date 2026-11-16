@@ -1,0 +1,2 @@
+The app now writes a debug log: every client request, every download chunk, every token attempt.
+Settings -> Debug log saves it to Downloads so it can be shared.

@@ -1,0 +1,4 @@
+Private tabs that leave no history behind.
+Download video, audio and files straight from a page.
+Add any page to the home grid, long press a tile to remove it.
+Stronger ad and tracker blocking, with a switch in Settings.

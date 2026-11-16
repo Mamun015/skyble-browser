@@ -1,0 +1,4 @@
+New app icon.
+YouTube downloads now use the visionOS client, so 1080p and 720p files arrive whole instead of stopping at a quarter.
+Media downloads from other sites keep working the same way.
+Tube helper app is hidden from the launcher and got a new icon.

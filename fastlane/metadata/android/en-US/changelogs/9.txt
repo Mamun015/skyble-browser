@@ -1,0 +1,3 @@
+1080p and 720p downloads now finish: the video and audio tracks are fetched in small byte ranges and joined inside the browser.
+A refused piece is retried with a fresh link for the same quality, so the download carries on instead of failing.
+Downloads show an ongoing notification with live progress, and it stays after the file is saved.

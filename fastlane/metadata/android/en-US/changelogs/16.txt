@@ -1,0 +1,2 @@
+YouTube links now come from the same client the YouTube visionOS app uses, which serves the whole file.
+The old clients stay as fallbacks, and a 360p single-file row is kept in case joining fails.

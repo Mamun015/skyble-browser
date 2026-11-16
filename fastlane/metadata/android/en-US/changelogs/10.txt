@@ -1,0 +1,3 @@
+When YouTube cuts a high quality file short, the next lower quality is downloaded instead of failing.
+480p is offered as a quality choice, so a blocked 1080p still leaves a sharper file than 360p.
+The download row and the notification show each step: downloading video, downloading audio, joining them.

@@ -1,0 +1,2 @@
+Each file is now fetched over four connections at once, so one stalled connection no longer stops the download.
+Waiting for the YouTube token no longer freezes the progress text; it waits at most 30 seconds, then falls back.

@@ -33,6 +33,7 @@ final class Downloader {
     private Downloader() { }
 
     static final int REQ_STORAGE = 4302;
+    static final int REQ_NOTIFY = 4303;
 
     static final class Task {
         final String name;
@@ -40,6 +41,8 @@ final class Downloader {
         long total;
         long done;
         long speed;
+        int notified = -1;
+        String notifiedPhase = "";
         volatile boolean stop;
         String phase = Lang.t("সংযোগ হচ্ছে…");
 
@@ -83,9 +86,8 @@ final class Downloader {
         return String.format(java.util.Locale.US, "%.2f GB", bytes / 1073741824.0);
     }
 
-    static void start(final MainActivity act, final String url, final String ua,
-                      final String contentDisposition, final String mime, final long len) {
-        Lang.init(act.getSharedPreferences("skyble_browser", 0));
+    /** স্টোরেজের অনুমতি আছে কি না; না থাকলে চেয়ে নেয় আর false দেয় */
+    static boolean hasStorage(MainActivity act) {
         if (Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT < 29
                 && act.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -93,12 +95,90 @@ final class Downloader {
                     REQ_STORAGE);
             Toast.makeText(act, Lang.t("ফাইল রাখতে স্টোরেজের অনুমতি দাও, তারপর আবার চাপো"),
                     Toast.LENGTH_LONG).show();
-            return;
+            return false;
         }
+        return true;
+    }
+
+    /** Android 13+ এ নোটিফিকেশনের অনুমতি চেয়ে নেয়, না দিলেও ডাউনলোড চলবে */
+    static void askNotify(MainActivity act) {
+        if (Notify.allowed(act)) return;
+        try {
+            // একবারই জিজ্ঞাসা; না দিলে ডাউনলোড তবু চলবে
+            android.content.SharedPreferences p =
+                    act.getSharedPreferences("skyble_browser", 0);
+            if (p.getBoolean("notify_asked", false)) return;
+            p.edit().putBoolean("notify_asked", true).apply();
+            act.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},
+                    REQ_NOTIFY);
+        } catch (Exception ignored) { }
+    }
+
+    static void addTask(Task t) {
+        ACTIVE.add(t);
+    }
+
+    static void removeTask(Task t) {
+        ACTIVE.remove(t);
+    }
+
+    /**
+     * ফোনের Downloads ফোল্ডারে ফাইল বসায় (Android 10+ এ MediaStore দিয়ে),
+     * আগে থেকে একই নাম থাকলে নম্বর জুড়ে দেয়।
+     */
+    static Uri publishFile(android.content.Context act, File src, String name, String mime) throws Exception {
+        Uri publicUri = null;
+        File file = null;
+        if (Build.VERSION.SDK_INT >= 29) {
+            ContentValues cv = new ContentValues();
+            cv.put("_display_name", name);
+            cv.put("mime_type", mime == null || mime.length() == 0
+                    ? "application/octet-stream" : mime);
+            cv.put("relative_path", Environment.DIRECTORY_DOWNLOADS);
+            cv.put("is_pending", 1);
+            publicUri = act.getContentResolver()
+                    .insert(Uri.parse("content://media/external/downloads"), cv);
+        } else {
+            File dir = Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS);
+            if (!dir.exists()) dir.mkdirs();
+            file = new File(dir, name);
+            int n = 1;
+            while (file.exists()) {
+                file = new File(dir, numbered(name, n++));
+            }
+        }
+        OutputStream out = publicUri != null
+                ? act.getContentResolver().openOutputStream(publicUri)
+                : new FileOutputStream(file);
+        InputStream in = new java.io.FileInputStream(src);
+        try {
+            byte[] buf = new byte[65536];
+            int read;
+            while ((read = in.read(buf)) > 0) out.write(buf, 0, read);
+        } finally {
+            try { in.close(); } catch (Exception ignored) { }
+            try { if (out != null) out.close(); } catch (Exception ignored) { }
+        }
+        if (publicUri != null) {
+            ContentValues done = new ContentValues();
+            done.put("is_pending", 0);
+            act.getContentResolver().update(publicUri, done, null, null);
+            return publicUri;
+        }
+        return file == null ? null : Uri.fromFile(file);
+    }
+
+    static void start(final MainActivity act, final String url, final String ua,
+                      final String contentDisposition, final String mime, final long len) {
+        Lang.init(act.getSharedPreferences("skyble_browser", 0));
+        if (!hasStorage(act)) return;
 
         final Task task = new Task(fileName(url, contentDisposition, mime), mime);
         task.total = len > 0 ? len : 0;
         ACTIVE.add(task);
+        askNotify(act);
+        Notify.start(act, task);
         Toast.makeText(act, Lang.t("ডাউনলোড শুরু হয়েছে: ") + task.name, Toast.LENGTH_SHORT).show();
 
         new Thread(new Runnable() {
@@ -194,6 +274,7 @@ final class Downloader {
                                         / Math.max(1, now - lastTime);
                                 lastBytes = task.done;
                                 lastTime = now;
+                                Notify.tick(act, task);
                             }
                         }
                         out.flush();
@@ -212,6 +293,7 @@ final class Downloader {
         if (task.stop) {
             ACTIVE.remove(task);
             deleteTarget(act, publicUri, file);
+            Notify.cancel(act);
             toast(act, Lang.t("ডাউনলোড বাতিল হয়েছে"));
             return;
         }
@@ -219,6 +301,7 @@ final class Downloader {
         if (fail != null) {
             ACTIVE.remove(task);
             deleteTarget(act, publicUri, file);
+            Notify.fail(act, task.name, fail);
             toast(act, fail);
             return;
         }
@@ -236,6 +319,7 @@ final class Downloader {
         act.addDownloadRecord(task.name, record == null ? "" : record.toString(),
                 task.mime, task.done);
         ACTIVE.remove(task);
+        Notify.done(act, task);
         toast(act, Lang.t("ডাউনলোড সম্পন্ন: ") + task.name + " · " + sizeText(task.done));
     }
 
