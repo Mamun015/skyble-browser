@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Skyble Browser – fast, light, private Android browser under 1 MB</title>
-<meta name="description" content="Skyble Browser is a free, open source web browser for Android. Under 1 MB, 50 tabs, ad and tracker blocking, in-app downloads, dark mode, English and Bengali. No ads, no tracking, no account.">
+<title>Skyble Browser – fast Android browser with YouTube video download</title>
+<meta name="description" content="Skyble Browser is a free, open source browser for Android with a built-in YouTube and media downloader: 1080p and 720p video saved as MP4, plus video, audio and files from other sites. Under 1 MB, 50 tabs, ad blocking, dark mode, English and Bengali. No ads, no account.">
 <link rel="canonical" href="https://mamun015.github.io/skyble-browser/">
 <meta name="theme-color" content="#0140ca">
 <meta name="author" content="Mamun">
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Skyble Browser">
 <meta property="og:title" content="Skyble Browser – fast, light, private Android browser">
-<meta property="og:description" content="A free, open source browser for Android under one megabyte. Tabs, ad blocking, downloads, dark mode. No ads, no tracking, no account.">
+<meta property="og:description" content="A free, open source browser for Android under one megabyte, with a built-in YouTube downloader: 1080p and 720p MP4, and media from other sites. Tabs, ad blocking, dark mode. No ads, no account.">
 <meta property="og:url" content="https://mamun015.github.io/skyble-browser/">
 <meta property="og:image" content="https://mamun015.github.io/skyble-browser/og.png">
 <meta property="og:image:width" content="1200">
@@ -23,7 +23,7 @@
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Skyble Browser – fast, light, private Android browser">
-<meta name="twitter:description" content="Free and open source. Under 1 MB. Tabs, ad blocking, downloads, dark mode.">
+<meta name="twitter:description" content="Free and open source. Under 1 MB. YouTube 1080p downloads, media from other sites, tabs, ad blocking, dark mode.">
 <meta name="twitter:image" content="https://mamun015.github.io/skyble-browser/og.png">
 
 <link rel="icon" href="icon.png" sizes="512x512">
@@ -39,10 +39,11 @@
   "applicationCategory": "BrowserApplication",
   "applicationSubCategory": "Web browser",
   "operatingSystem": "Android 5.0 and newer",
-  "softwareVersion": "1.0.1",
-  "fileSize": "650KB",
+  "softwareVersion": "1.2",
+  "fileSize": "790KB",
   "inLanguage": ["en", "bn"],
-  "description": "A small, fast web browser for Android with tabs, an ad and tracker host blocker, in-app downloads, dark mode and English or Bengali interface. Built on the Android System WebView, so the app stays under one megabyte.",
+  "description": "A small, fast web browser for Android with tabs, an ad and tracker host blocker, dark mode, English or Bengali interface, and a built-in downloader that saves YouTube video at 1080p and 720p as MP4 plus video, audio and files from other sites. Built on the Android System WebView, so the app stays under one megabyte.",
+  "featureList": ["YouTube video download in 1080p and 720p", "Media downloads from other sites", "Up to 50 tabs", "Ad and tracker host blocking", "Dark mode", "English and Bengali interface"],
   "url": "https://mamun015.github.io/skyble-browser/",
   "downloadUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
   "installUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
@@ -67,11 +68,15 @@
     { "@type": "Question", "name": "Is Skyble Browser free?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. The app is free to download and use, with no ads, no subscription and no account. The source code is published under the Mozilla Public License 2.0." } },
     { "@type": "Question", "name": "How big is the app?",
-      "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 650 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 790 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
     { "@type": "Question", "name": "Does it block ads?",
       "acceptedAnswer": { "@type": "Answer", "text": "It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone." } },
     { "@type": "Question", "name": "Can I use it in Bengali?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. The interface is English by default and a complete Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default." } },
+    { "@type": "Question", "name": "Can I download YouTube videos with it?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. On a YouTube video page the download button lists the available qualities with file sizes, up to 1080p. High qualities are delivered as separate picture and sound tracks and are joined into one MP4 on the phone, so the file plays in any gallery or video app. No second app, account or converter site is needed." } },
+    { "@type": "Question", "name": "Does it download video and audio from other sites?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes. The browser scans the page for MP4, WebM, MKV, MP3, M4A, AAC, OGG and WAV files and puts them in the same download list, along with PDF, ZIP and APK links. Downloads run in the notification bar, so you can keep browsing." } },
     { "@type": "Question", "name": "Which Android versions are supported?",
       "acceptedAnswer": { "@type": "Answer", "text": "Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings." } }
   ]
@@ -167,8 +172,8 @@ footer a{color:var(--muted)}
     <img src="icon.png" alt="Skyble Browser icon" width="30" height="30">
     <b>Skyble Browser</b>
     <nav>
+      <a href="#downloads">Downloads</a>
       <a href="#features">Features</a>
-      <a href="#screenshots">Screenshots</a>
       <a href="#install">Install</a>
       <a href="#faq">FAQ</a>
       <a href="https://github.com/Mamun015/skyble-browser">GitHub</a>
@@ -180,16 +185,18 @@ footer a{color:var(--muted)}
   <div class="wrap">
     <div>
       <span class="tag">Free · Open source · Android</span>
-      <h1>A fast, light browser for Android that stays out of your way</h1>
+      <h1>A fast, light browser for Android that also downloads video</h1>
       <p class="lead">Skyble Browser is a small web browser with real tabs, ad and tracker
-        blocking, downloads, dark mode and both English and Bengali. No ads, no tracking,
-        no account, and the whole app is under one megabyte.</p>
+        blocking, dark mode and both English and Bengali. A downloader is built in: on a
+        YouTube page it saves the video at up to 1080p as a normal MP4, and on other sites it
+        picks up video, audio and files. No ads, no tracking, no account, and the whole app is
+        under one megabyte.</p>
       <div class="btns">
         <a class="btn primary" href="https://github.com/Mamun015/skyble-browser/releases/latest">Download the APK</a>
         <a class="btn ghost" href="https://github.com/Mamun015/skyble-browser">Source code</a>
       </div>
       <div class="facts">
-        <span>Android 5.0+</span><span>~650 KB</span><span>MPL-2.0</span><span>No ads · No trackers</span>
+        <span>Android 5.0+</span><span>~790 KB</span><span>MPL-2.0</span><span>YouTube 1080p</span><span>No ads · No trackers</span>
       </div>
     </div>
     <img class="appicon" src="icon.png" alt="Skyble Browser app icon" width="200" height="200">
@@ -210,6 +217,33 @@ footer a{color:var(--muted)}
   </div>
 </section>
 
+<section id="downloads">
+  <div class="wrap">
+    <h2>Download video and audio from the page</h2>
+    <p class="sub">The downloader is part of the browser. No second app, no account, no converter
+      site, no copy-paste of links.</p>
+    <div class="grid">
+      <div class="card"><div class="k">YouTube</div><h3>Up to 1080p</h3>
+        <p>On a YouTube video page one tap lists the qualities with their file sizes, up to 1080p.
+          High qualities arrive as separate picture and sound tracks and are joined on the phone,
+          so you get one MP4 that plays in any gallery or video app.</p></div>
+      <div class="card"><div class="k">Other sites</div><h3>Video, audio, files</h3>
+        <p>MP4, WebM, MKV, MP3, M4A, AAC, OGG and WAV files found on the page go to the same
+          list, together with PDF, ZIP and APK links.</p></div>
+      <div class="card"><div class="k">Speed</div><h3>Four connections</h3>
+        <p>Each file is fetched in four parallel ranges. A dropped connection resumes from the
+          byte it reached, and if the server refuses a quality the app moves to the next one
+          instead of failing.</p></div>
+      <div class="card"><div class="k">While it runs</div><h3>Keeps going</h3>
+        <p>Progress, speed and cancel sit in the notification bar. You can keep browsing, switch
+          tabs or leave the app while a file finishes.</p></div>
+    </div>
+    <p class="sub" style="margin-top:26px">Download only what you have the right to keep. YouTube's
+      terms allow watching, not redistribution, so use the downloader for personal copies where
+      the law in your country allows it.</p>
+  </div>
+</section>
+
 <section id="features">
   <div class="wrap">
     <h2>Small app, complete browser</h2>
@@ -224,7 +258,8 @@ footer a{color:var(--muted)}
       <div class="card"><div class="k">Language</div><h3>English and Bengali</h3>
         <p>English interface by default, a full Bengali interface one tap away, plus optional translation of English pages.</p></div>
       <div class="card"><div class="k">Downloads</div><h3>Built-in download list</h3>
-        <p>Progress, speed and cancel in one screen. Files land in the phone's normal Downloads folder.</p></div>
+        <p>YouTube video, page media and ordinary files in one screen, with progress, speed and
+          cancel. Everything lands in the phone's normal Downloads folder.</p></div>
       <div class="card"><div class="k">Search</div><h3>Live suggestions</h3>
         <p>Suggestions from your search engine, plus matches from your own history and bookmarks.</p></div>
       <div class="card"><div class="k">Tools</div><h3>Find, print, share</h3>
@@ -265,7 +300,7 @@ footer a{color:var(--muted)}
     <p class="sub">No store account needed. The APK is signed with the same key every release,
       so updates install straight over the previous version.</p>
     <ol class="steps">
-      <li>Download <strong>SkybleBrowser-1.0.1.apk</strong> from the
+      <li>Download <strong>SkybleBrowser-1.2.apk</strong> from the
         <a href="https://github.com/Mamun015/skyble-browser/releases/latest">latest release</a>.</li>
       <li>Open the file. If Android asks, allow installs from your browser or file manager.</li>
       <li>Tap Install. Open the app, then set it as your default browser from the menu if you want.</li>
@@ -289,8 +324,10 @@ footer a{color:var(--muted)}
   <div class="wrap">
     <h2>বাংলায় স্কাইবল ব্রাউজার</h2>
     <p class="sub">অ্যান্ড্রয়েডের জন্য হালকা ও দ্রুত ব্রাউজার। এক মেগাবাইটেরও কম, বাংলা ইন্টারফেস,
-      ট্যাব, বিজ্ঞাপন ব্লকার, ডাউনলোড ও রাতের মোড — সব বিনামূল্যে। কোনো বিজ্ঞাপন নেই,
+      ট্যাব, বিজ্ঞাপন ব্লকার, ডাউনলোড ও রাতের মোড সব বিনামূল্যে। কোনো বিজ্ঞাপন নেই,
       কোনো ট্র্যাকিং নেই, অ্যাকাউন্টও লাগে না।</p>
+    <p class="sub">ইউটিউবের ভিডিও ব্রাউজারের ভেতর থেকেই নামানো যায়, ১০৮০p পর্যন্ত, সাধারণ MP4
+      ফাইল হিসেবে। অন্য সাইটের ভিডিও, অডিও আর ফাইলও একই ডাউনলোড তালিকায় আসে।</p>
     <p class="sub">ইনস্টল করতে উপরের <strong>Download the APK</strong> বাটনে চাপো, ফাইলটি খুলে
       Install দাও। সেটিংস থেকে ভাষা বাংলা করে নিতে পারবে।</p>
   </div>
@@ -302,11 +339,18 @@ footer a{color:var(--muted)}
     <details><summary>Is Skyble Browser free?</summary>
       <p>Yes. No ads, no subscription, no account. The source code is published under the Mozilla Public License 2.0.</p></details>
     <details><summary>How big is the app?</summary>
-      <p>About 650 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
+      <p>About 790 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
     <details><summary>Does it block ads?</summary>
       <p>It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone.</p></details>
     <details><summary>Can I use it in Bengali?</summary>
       <p>Yes. The interface is English by default and the Bengali translation is one tap away in Settings. English pages can also be translated to Bengali, off by default.</p></details>
+    <details><summary>Can I download YouTube videos with it?</summary>
+      <p>Yes. Open the video, tap the download button and pick a quality, up to 1080p. High
+        qualities are delivered as separate picture and sound tracks, which the app joins into one
+        MP4 on the phone. No second app, account or converter site is involved.</p></details>
+    <details><summary>Does it download video and audio from other sites?</summary>
+      <p>Yes. The browser looks for MP4, WebM, MKV, MP3, M4A, AAC, OGG and WAV files on the page
+        and puts them in the same download list, along with PDF, ZIP and APK links.</p></details>
     <details><summary>Which Android versions are supported?</summary>
       <p>Android 5.0 and newer. Updates install over the previous version and keep your bookmarks, history and settings.</p></details>
     <details><summary>Where do I report a bug?</summary>

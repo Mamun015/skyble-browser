@@ -9,9 +9,11 @@
 
 **Website: [mamun015.github.io/skyble-browser](https://mamun015.github.io/skyble-browser/)**
 
-A fast, light web browser for Android. Small download, quick start, no ads, no
-tracking, no account. Built on the Android System WebView so the engine stays
-current with the phone and the app stays under one megabyte.
+A fast, light web browser for Android with a downloader built in. Small
+download, quick start, no ads, no tracking, no account. YouTube videos save at up
+to 1080p as ordinary MP4 files, and media from other sites lands in the same
+download list. Built on the Android System WebView so the engine stays current
+with the phone and the app stays under one megabyte.
 
 ## Screenshots
 
@@ -23,6 +25,19 @@ current with the phone and the app stays under one megabyte.
 </p>
 
 ## Features
+
+**Downloads**
+- YouTube video at 1080p, 720p, 480p and 360p from the page's download button.
+  High qualities are fetched as separate picture and sound tracks and joined into
+  one MP4 with MediaMuxer on the phone
+- MP4, WebM, MKV, MP3, M4A, AAC, OGG and WAV taken from the current page, plus
+  PDF, ZIP and APK links
+- Four parallel connections per file, resume from the byte reached, and a fall
+  back to the next quality when the server refuses one
+- Progress, speed and cancel in the notification bar; files go to the normal
+  Downloads folder
+- Optional GPL helper app (`plugin/`) with NewPipeExtractor for the rare video
+  the built-in resolver cannot read
 
 **Browsing**
 - Up to 50 tabs, with a session that comes back after a restart
@@ -49,10 +64,6 @@ current with the phone and the app stays under one megabyte.
 
 **AI**
 - Translate English pages to Bengali from the Settings screen, off by default
-
-**Downloads**
-- Built-in download list with progress, speed and cancel
-- Files land in the phone's normal Downloads folder
 
 **Updates**
 - In-app check against GitHub releases; the app tells you when a newer build exists
@@ -96,7 +107,8 @@ src/com/skyble/browser/   Java sources (single activity browser, settings, updat
 assets/home.html          start page
 assets/dark.js            dark mode for web pages
 assets/translate.js       page translation
-docs/banner.png           README banner
+docs/                      project website (GitHub Pages)
+plugin/                   optional helper app with NewPipeExtractor (GPL-3.0)
 fastlane/                 store listing: text, icon, screenshots
 assets/icon.png           app artwork for the start page
 res/                      icons, adaptive icon layers, strings
@@ -106,7 +118,6 @@ build.sh                  build script
 ## Roadmap
 
 - Built-in video player
-- Video download from the current page
 - Stronger ad filtering with a maintained filter list
 
 ## License
