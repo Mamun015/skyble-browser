@@ -1,0 +1,12 @@
+New
+- The browser checks for a new version every time it opens, and once an hour
+  while it stays open. The update popup comes back after a restart.
+- A finished download shows a small bar with an Open button, and the download
+  notification has an Open action too.
+- When the browser's own update finishes downloading, the install screen opens
+  by itself.
+
+Fixed
+- The update popup was held back for 12 hours and the check for 6 hours.
+  Both limits are gone.
+- YouTube downloads now record the file and offer Open like other downloads.

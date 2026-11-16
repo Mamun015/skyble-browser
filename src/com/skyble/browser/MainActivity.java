@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.2.4";
+    private static final String VERSION = "1.2.5";
     private boolean autoTranslate = true;
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
@@ -75,6 +75,16 @@ public class MainActivity extends Activity {
     private ScrollView suggestScroll;
     private TextView updatePill;
     private String knownUpdate, knownApk;
+    /** এই অ্যাপ চালু থাকার সময় কোন ভার্সনের পপআপ দেখানো হয়েছে */
+    private String updateShown;
+    /** সর্বশেষ আপডেট চেক কখন শুরু হয়েছিল (মিলিসেকেন্ড) */
+    private long updateCheckedAt;
+    private Handler updateTimer;
+    /** ইনস্টলের অনুমতি না থাকলে APK এখানে জমা থাকে */
+    private Uri pendingInstall;
+    /** ডাউনলোড শেষের ছোট বার */
+    private View doneBar;
+    private Handler doneHandler;
     private FrameLayout.LayoutParams suggestLp;
     private boolean suggestTapping;
     private int suggestScreenH, suggestKeyboardH;
@@ -249,8 +259,16 @@ public class MainActivity extends Activity {
             }
         }
 
-        // দিনে একবার চুপচাপ নতুন ভার্সন দেখে; নতুন কিছু থাকলে তবেই জানায়
-        if (Updater.due(this)) checkUpdates(false);
+        // অ্যাপ খুললেই নতুন ভার্সন দেখে নেয়; নতুন কিছু থাকলে পপআপ আসে
+        checkUpdates(false);
+        // খোলা থাকলে (ব্যাকগ্রাউন্ডেও) ঘণ্টায় একবার নিজে থেকেই দেখে
+        updateTimer = new Handler(Looper.getMainLooper());
+        updateTimer.postDelayed(new Runnable() {
+            public void run() {
+                if (Updater.due(MainActivity.this)) checkUpdates(false);
+                if (updateTimer != null) updateTimer.postDelayed(this, 60L * 60 * 1000);
+            }
+        }, 60L * 60 * 1000);
     }
 
     @Override
@@ -336,8 +354,14 @@ public class MainActivity extends Activity {
             darkPages = dp;
             if (current != null) current.reload();
         }
-        // অ্যাপে ফিরে এলে মাঝে মাঝে নতুন ভার্সন দেখে নেয়
-        if (Updater.due(this)) checkUpdates(false);
+        // অ্যাপ বন্ধ করে আবার খুললে (বা অনেকক্ষণ পর ফিরলে) আবার চেক
+        if (System.currentTimeMillis() - updateCheckedAt > 60L * 1000) checkUpdates(false);
+        // ইনস্টলের অনুমতি দেওয়া হয়ে থাকলে এখনই ইনস্টলার খুলে দেয়
+        if (pendingInstall != null) {
+            Uri wait = pendingInstall;
+            pendingInstall = null;
+            installApk(wait);
+        }
         // ওয়ালপেপার/সিস্টেম থিম বদলালে প্যালেটও বদলায় — তখন নতুন রঙে আঁকি
         Theme now = new Theme(this, darkMode);
         if (cStamp != 0) {
@@ -358,6 +382,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (updateTimer != null) updateTimer.removeCallbacksAndMessages(null);
+        if (doneHandler != null) doneHandler.removeCallbacksAndMessages(null);
         pillTick.removeCallbacksAndMessages(null);
         if (suggestHandler != null) suggestHandler.removeCallbacksAndMessages(null);
         exitFullscreen();
@@ -4055,6 +4081,7 @@ public class MainActivity extends Activity {
 
     /** manual হলে চেক শুরুর সময়ই জানায়; ব্যাকগ্রাউন্ড চেক চুপচাপ চলে। */
     private void checkUpdates(final boolean manual) {
+        updateCheckedAt = System.currentTimeMillis();
         if (manual) toast(Lang.t("আপডেট খোঁজা হচ্ছে…"));
         Updater.check(this, Updater.currentVersion(this), (version, apkUrl, failed) -> {
             if (failed) {
@@ -4064,7 +4091,7 @@ public class MainActivity extends Activity {
             if (version == null) {
                 knownUpdate = null;
                 knownApk = null;
-                prefs.edit().remove("update.shown").apply();
+                updateShown = null;
                 if (updatePill != null) updatePill.setVisibility(View.GONE);
                 if (manual) toast(Lang.t("আপনি সর্বশেষ সংস্করণ ব্যবহার করছেন"));
                 return;
@@ -4076,17 +4103,14 @@ public class MainActivity extends Activity {
     private void showUpdate(final String version, final String apkUrl, boolean force) {
         knownUpdate = version;
         knownApk = apkUrl;
+        if (isFinishing() || isDestroyed()) return;
         if (updatePill != null) {
             updatePill.setText("↑ " + version);
             updatePill.setVisibility(View.VISIBLE);
         }
-        // একই ভার্সনের কথা বারবার নয় — ১২ ঘণ্টায় একবার
-        long now = System.currentTimeMillis();
-        String shown = prefs.getString("update.shown", "");
-        long when = prefs.getLong("update.shown.at", 0L);
-        if (!force && shown.equals(version) && now - when < 12L * 60 * 60 * 1000) return;
-        prefs.edit().putString("update.shown", version)
-                .putLong("update.shown.at", now).apply();
+        // একই ভার্সনের পপআপ এই অ্যাপ চালুর সময়ে একবারই; আবার খুললে আবার আসবে
+        if (!force && version.equals(updateShown)) return;
+        updateShown = version;
 
         String msg = Lang.isEn()
                 ? "Version " + version + " is available.\nYou are on "
@@ -4201,6 +4225,165 @@ public class MainActivity extends Activity {
                 .setMessage(msg)
                 .setPositiveButton(Lang.t("ঠিক আছে"), null)
                 .show();
+    }
+
+    // ---------------------------------------------------------------- ডাউনলোড শেষ
+
+    /** ডাউনলোডার ফাইল নামানোর পরে এখানে খবর দেয় (পেছনের থ্রেড থেকে আসে) */
+    void downloadDone(final Downloader.Task task, final Uri uri) {
+        if (task == null) return;
+        runOnUiThread(new Runnable() {
+            public void run() {
+                if (isFinishing() || isDestroyed()) return;
+                // ব্রাউজারের নিজের আপডেট হলে সোজা ইনস্টল স্ক্রিন
+                if (task.selfUpdate && uri != null) {
+                    installApk(uri);
+                    return;
+                }
+                showDoneBar(task.name, uri, task.mime);
+            }
+        });
+    }
+
+    /** নিচে ভেসে ওঠা ছোট বার — "ওপেন" চাপলে ফাইলটা খোলে */
+    private void showDoneBar(final String name, final Uri uri, final String mime) {
+        final ViewGroup root = findViewById(android.R.id.content);
+        if (root == null || uri == null) {
+            toast(Lang.t("ডাউনলোড সম্পন্ন: ") + name);
+            return;
+        }
+        if (doneBar != null && doneBar.getParent() != null) {
+            ((ViewGroup) doneBar.getParent()).removeView(doneBar);
+        }
+        if (doneHandler == null) doneHandler = new Handler(Looper.getMainLooper());
+
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setBackground(roundedBorder(cSurface2, 16));
+        bar.setElevation(dp(8));
+        bar.setPadding(dp(14), dp(10), dp(6), dp(10));
+
+        TextView msg = new TextView(this);
+        msg.setText(Lang.t("ডাউনলোড সম্পন্ন: ") + name);
+        msg.setTextSize(12.5f);
+        msg.setTextColor(cText);
+        msg.setMaxLines(2);
+        msg.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        bar.addView(msg, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView open = new TextView(this);
+        open.setText(Lang.t("ওপেন"));
+        open.setTextSize(13);
+        open.setTypeface(Typeface.DEFAULT_BOLD);
+        open.setTextColor(cAccent);
+        open.setPadding(dp(12), dp(8), dp(12), dp(8));
+        open.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                hideDoneBar();
+                openFile(uri, mime);
+            }
+        });
+        bar.addView(open, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        TextView close = new TextView(this);
+        close.setText("✕");
+        close.setTextSize(13);
+        close.setTextColor(cMuted);
+        close.setPadding(dp(10), dp(8), dp(10), dp(8));
+        close.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { hideDoneBar(); }
+        });
+        bar.addView(close, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.gravity = Gravity.BOTTOM;
+        lp.leftMargin = dp(12);
+        lp.rightMargin = dp(12);
+        lp.bottomMargin = dp(80);
+        root.addView(bar, lp);
+        doneBar = bar;
+
+        doneHandler.removeCallbacksAndMessages(null);
+        doneHandler.postDelayed(new Runnable() {
+            public void run() { hideDoneBar(); }
+        }, 8000);
+    }
+
+    private void hideDoneBar() {
+        if (doneBar == null) return;
+        if (doneBar.getParent() != null) ((ViewGroup) doneBar.getParent()).removeView(doneBar);
+        doneBar = null;
+    }
+
+    private void openFile(Uri uri, String mime) {
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(uri, mime == null || mime.length() == 0 ? "*/*" : mime);
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            try {
+                startActivity(new Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS));
+            } catch (Exception ignored) {
+                toast(Lang.t("ফাইলটা খোলা যায়নি"));
+            }
+        }
+    }
+
+    private boolean canInstall() {
+        if (Build.VERSION.SDK_INT < 26) return true;
+        try {
+            return getPackageManager().canRequestPackageInstalls();
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** APK-টা ক্যাশে কপি করে ইনস্টলার স্ক্রিন খোলে */
+    private void installApk(Uri uri) {
+        if (uri == null) return;
+        if (!canInstall()) {
+            pendingInstall = uri;
+            dialog().setTitle(Lang.t("ইনস্টলের অনুমতি"))
+                    .setMessage(Lang.t("আপডেট ইনস্টল করতে এই ব্রাউজারকে অজানা অ্যাপ ইনস্টল করার অনুমতি দিতে হবে। অনুমতি দিয়ে ফিরে এলে ইনস্টল স্ক্রিন নিজেই আসবে।"))
+                    .setPositiveButton(Lang.t("সেটিংসে যাও"), (d, w) -> {
+                        try {
+                            startActivity(new Intent(
+                                    android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                    Uri.parse("package:" + getPackageName())));
+                        } catch (Exception ignored) { }
+                    })
+                    .setNegativeButton(Lang.t("পরে"), null)
+                    .show();
+            return;
+        }
+        try {
+            java.io.File tmp = new java.io.File(getCacheDir(), "update.apk");
+            java.io.InputStream in = getContentResolver().openInputStream(uri);
+            if (in == null) throw new java.io.IOException("no stream");
+            java.io.FileOutputStream out = new java.io.FileOutputStream(tmp);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally {
+                try { in.close(); } catch (Exception ignored) { }
+                try { out.close(); } catch (Exception ignored) { }
+            }
+            ApkProvider.shared = tmp;
+            Uri apk = Uri.parse("content://" + ApkProvider.AUTHORITY + "/update.apk");
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(apk, "application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            toast(Lang.t("ইনস্টলার খোলা যায়নি, Downloads ফোল্ডার থেকে APK ফাইলটা চেপে ইনস্টল করো"));
+        }
     }
 
     private void toast(String s) {

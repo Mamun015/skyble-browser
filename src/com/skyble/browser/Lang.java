@@ -128,6 +128,14 @@ public class Lang {
         EN.put("নাম (যেমন প্রথম আলো)", "Name (e.g. Prothom Alo)");
         EN.put("নেটওয়ার্ক সমস্যা, ফাইলটা নামানো যায়নি", "Network problem, the file could not be downloaded");
         EN.put("পরে", "Later");
+        EN.put("ওপেন", "Open");
+        EN.put("ফাইলটা খোলা যায়নি", "Could not open the file");
+        EN.put("ইনস্টলের অনুমতি", "Install permission");
+        EN.put("আপডেট ইনস্টল করতে এই ব্রাউজারকে অজানা অ্যাপ ইনস্টল করার অনুমতি দিতে হবে। অনুমতি দিয়ে ফিরে এলে ইনস্টল স্ক্রিন নিজেই আসবে।",
+                "To install the update, this browser needs permission to install unknown apps. Come back after allowing it and the install screen opens by itself.");
+        EN.put("সেটিংসে যাও", "Open settings");
+        EN.put("ইনস্টলার খোলা যায়নি, Downloads ফোল্ডার থেকে APK ফাইলটা চেপে ইনস্টল করো",
+                "Could not open the installer. Tap the APK in the Downloads folder to install.");
         EN.put("পিছনে", "Back");
         EN.put("পেজ", "Page");
         EN.put("পেজে খুঁজুন", "Find in page");

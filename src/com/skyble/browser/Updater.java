@@ -21,8 +21,8 @@ final class Updater {
             "https://github.com/Mamun015/skyble-browser/releases/latest";
     private static final String API =
             "https://api.github.com/repos/Mamun015/skyble-browser/releases/latest";
-    /** অটো চেকের বিরতি — দিনে একবার নয়, ৬ ঘণ্টায় একবার */
-    private static final long EVERY = 6L * 60 * 60 * 1000;
+    /** অ্যাপ খোলা থাকলে ঘণ্টায় একবার নিজে থেকেই দেখে */
+    private static final long EVERY = 60L * 60 * 1000;
 
     interface Result {
         /**
@@ -35,7 +35,7 @@ final class Updater {
 
     private Updater() { }
 
-    /** শেষ চেকের ৬ ঘণ্টা পেরোলে true। */
+    /** শেষ চেকের এক ঘণ্টা পেরোলে true। */
     static boolean due(Context c) {
         SharedPreferences p = c.getSharedPreferences("skyble_browser", Context.MODE_PRIVATE);
         return System.currentTimeMillis() - p.getLong("update.checked", 0) > EVERY;
@@ -55,6 +55,7 @@ final class Updater {
         final Handler ui = new Handler(Looper.getMainLooper());
         new Thread(new Runnable() {
             public void run() {
+                String base = baseVersion(current);
                 String version = null;
                 String apk = null;
                 boolean failed = true;
@@ -76,7 +77,8 @@ final class Updater {
                         failed = false;
                         String tag = json.optString("tag_name", "");
                         tag = tag.replace("v", "").trim();
-                        if (newer(tag, current)) {
+                        // "1.2.5 test 1" টেস্ট বিল্ডে বসে থাকলেও 1.2.5 বা তার পরেরটা ধরা পড়ে
+                        if (newer(tag, base) || sameAsTestBase(tag, current)) {
                             version = tag;
                             JSONArray assets = json.optJSONArray("assets");
                             if (assets != null) {
@@ -116,6 +118,21 @@ final class Updater {
                 });
             }
         }).start();
+    }
+
+    /** "1.2.5 test 1" থেকে "1.2.5" — টেস্ট বিল্ডের মূল নম্বর */
+    static String baseVersion(String v) {
+        if (v == null) return "0";
+        int t = v.toLowerCase(Locale.US).indexOf("test");
+        String base = (t > 0 ? v.substring(0, t) : v).trim();
+        return base.length() == 0 ? v : base;
+    }
+
+    /** টেস্ট বিল্ডে বসে থাকলে একই নম্বরের আসল রিলিজকেও নতুন ধরতে হয় */
+    static boolean sameAsTestBase(String release, String current) {
+        if (current == null || release == null) return false;
+        if (!current.toLowerCase(Locale.US).contains("test")) return false;
+        return baseVersion(current).equalsIgnoreCase(release.trim());
     }
 
     /** "2.1.0" ধরনের ভার্সন তুলনা: a, b-এর চেয়ে নতুন হলে true। */

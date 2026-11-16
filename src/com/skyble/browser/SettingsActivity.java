@@ -33,7 +33,7 @@ public class SettingsActivity extends Activity {
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
     private int cOnAccent, cOnAccentSoft, cAccent2;
-    private static final String VERSION = "1.2.4";
+    private static final String VERSION = "1.2.5";
     private LinearLayout list;
 
     @Override

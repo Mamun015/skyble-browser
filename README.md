@@ -36,6 +36,8 @@ with the phone and the app stays under one megabyte.
   back to the next quality when the server refuses one
 - Progress, speed and cancel in the notification bar; files go to the normal
   Downloads folder
+- A finished download shows a bar with Open, and the notification gets an Open
+  action as well
 - Optional GPL helper app (`plugin/`) with NewPipeExtractor for the rare video
   the built-in resolver cannot read
 
@@ -45,6 +47,9 @@ with the phone and the app stays under one megabyte.
 - Home speed dial with Google, Facebook, Instagram, Gmail, GitHub, YouTube,
   Stack Overflow and MDN; press and hold a tile to drag it into place or to edit
   and delete it, and use the plus tile to add any site
+- Checks GitHub for a newer build every time it opens and once an hour while it
+  stays open, and the browser's own update goes straight from download to the
+  install screen
 - Find in page, print, share, copy link
 - Desktop site mode
 - Set Skyble as the default browser with one tap

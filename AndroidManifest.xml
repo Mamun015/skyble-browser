@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.skyble.browser"
-    android:versionCode="26"
-    android:versionName="1.2.4">
+    android:versionCode="27"
+    android:versionName="1.2.5">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- ব্রাউজারের নিজের আপডেট APK ইনস্টল করার প্রম্পট দেখাতে -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- হেল্পার অ্যাপ ডাউনলোড শেষের খবর পাঠাতে পারে, অন্য কেউ নয় -->
     <permission
@@ -50,6 +52,13 @@
                 <data android:scheme="https" />
             </intent-filter>
         </activity>
+
+        <!-- নিজের আপডেট APK-টা ইনস্টলারকে পড়তে দেয় -->
+        <provider
+            android:name=".ApkProvider"
+            android:authorities="com.skyble.browser.apk"
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
         <receiver
             android:name=".DownloadInbox"

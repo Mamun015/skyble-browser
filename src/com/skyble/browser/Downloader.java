@@ -43,6 +43,8 @@ final class Downloader {
         long speed;
         int notified = -1;
         String notifiedPhase = "";
+        /** ব্রাউজারের নিজের আপডেট APK হলে ডাউনলোড শেষে সোজা ইনস্টল স্ক্রিন */
+        boolean selfUpdate;
         volatile boolean stop;
         String phase = Lang.t("সংযোগ হচ্ছে…");
 
@@ -176,6 +178,7 @@ final class Downloader {
 
         final Task task = new Task(fileName(url, contentDisposition, mime), mime);
         task.total = len > 0 ? len : 0;
+        task.selfUpdate = isAppUpdate(url, task.name);
         ACTIVE.add(task);
         askNotify(act);
         Notify.start(act, task);
@@ -319,8 +322,17 @@ final class Downloader {
         MainActivity.addDownloadRecord(act, task.name, record == null ? "" : record.toString(),
                 task.mime, task.done);
         ACTIVE.remove(task);
-        Notify.done(act, task);
-        toast(act, Lang.t("ডাউনলোড সম্পন্ন: ") + task.name + " · " + sizeText(task.done));
+        Notify.done(act, task, record, task.mime);
+        act.downloadDone(task, record);
+    }
+
+    /** লিংকটা কি ব্রাউজারের নিজের রিলিজ APK (GitHub) — তখন ইনস্টল প্রম্পট আসবে */
+    private static boolean isAppUpdate(String url, String name) {
+        String u = url == null ? "" : url.toLowerCase(java.util.Locale.US);
+        String n = name == null ? "" : name.toLowerCase(java.util.Locale.US);
+        boolean ourRepo = u.contains("/skyble-browser/") && u.endsWith(".apk");
+        boolean ourFile = n.startsWith("skyblebrowser-") && n.endsWith(".apk");
+        return ourRepo || ourFile;
     }
 
     private static void toast(final MainActivity act, final String msg) {

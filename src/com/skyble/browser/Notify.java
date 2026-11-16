@@ -45,12 +45,13 @@ final class Notify {
         post(c, task, p, true);
     }
 
-    static void done(Context c, Downloader.Task task) {
-        finish(c, task.name, Lang.t("ডাউনলোড সম্পন্ন"));
+    static void done(Context c, Downloader.Task task, android.net.Uri uri, String mime) {
+        finish(c, task.name, Lang.t("ডাউনলোড সম্পন্ন"), uri, mime);
     }
 
     static void fail(Context c, String name, String why) {
-        finish(c, name, Lang.t("ডাউনলোড হয়নি") + (why == null || why.length() == 0 ? "" : " · " + why));
+        finish(c, name, Lang.t("ডাউনলোড হয়নি") + (why == null || why.length() == 0 ? "" : " · " + why),
+                null, null);
     }
 
     static void cancel(Context c) {
@@ -60,7 +61,8 @@ final class Notify {
         } catch (Exception ignored) { }
     }
 
-    private static void finish(Context c, String name, String text) {
+    private static void finish(Context c, String name, String text,
+                               android.net.Uri uri, String mime) {
         if (!allowed(c)) return;
         try {
             NotificationManager nm = manager(c);
@@ -73,6 +75,18 @@ final class Notify {
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(true)
                     .setContentIntent(open(c));
+            // ফাইলটা সাথে সাথে খোলার বোতাম
+            if (uri != null && Build.VERSION.SDK_INT >= 16) {
+                try {
+                    Intent view = new Intent(Intent.ACTION_VIEW);
+                    view.setDataAndType(uri, mime == null || mime.length() == 0 ? "*/*" : mime);
+                    view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    int flags = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
+                    PendingIntent pi = PendingIntent.getActivity(c, 2, view, flags);
+                    b.addAction(android.R.drawable.ic_menu_view, Lang.t("ওপেন"), pi);
+                } catch (Exception ignored) { }
+            }
             nm.notify(ID, b.build());
         } catch (Exception ignored) { }
     }

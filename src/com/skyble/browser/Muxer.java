@@ -82,11 +82,10 @@ final class Muxer {
             task.speed = 0;
             try {
                 Trace.w("dl", "quality " + row[1] + " start, size text " + row[2]);
-                save(act, id, row, name, task);
+                Uri saved = save(act, id, row, name, task);
                 Downloader.removeTask(task);
-                Notify.done(act, task);
-                String extra = notes.length() == 0 ? "" : " (" + notes + ")";
-                toast(act, Lang.t("ডাউনলোড সম্পন্ন: ") + name + " · " + row[1] + extra);
+                Notify.done(act, task, saved, task.mime);
+                act.downloadDone(task, saved);
                 return;
             } catch (Exception e) {
                 if (task.stop) break;
@@ -111,8 +110,8 @@ final class Muxer {
     }
 
     /** একটা কোয়ালিটি নামিয়ে, দরকার হলে জোড়া লাগিয়ে Downloads-এ রাখে */
-    private static void save(MainActivity act, String id, String[] row, String name,
-                             Downloader.Task task) throws Exception {
+    private static Uri save(MainActivity act, String id, String[] row, String name,
+                            Downloader.Task task) throws Exception {
         File vf = null, af = null, mf = null;
         try {
             String audio = row[3] == null ? "" : row[3];
@@ -146,6 +145,7 @@ final class Muxer {
             MainActivity.addDownloadRecord(act, name, out == null ? "" : out.toString(),
                     "video/mp4", mf.length());
             task.done = mf.length();
+            return out;
         } finally {
             delete(vf);
             delete(af);
