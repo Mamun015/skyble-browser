@@ -7,11 +7,13 @@
 <style>
   :root{
     --bg:#FFFFFF; --surface:#F3F7F5; --text:#0D1412; --muted:#667471;
-    --accent:#007A5A; --red:#f42a41; --line:#E4EBE7; --shadow:0 1px 2px rgba(13,20,18,.05);
+    --accent:#007A5A; --on-accent:#FFFFFF; --surface2:#E9F0EC;
+    --line:#E4EBE7; --danger:#B3261E; --shadow:0 1px 2px rgba(13,20,18,.05);
   }
   html.dark{
     --bg:#080B0A; --surface:#121715; --text:#EAF1EE; --muted:#8D9A95;
-    --accent:#34D399; --line:#1F2724; --shadow:none;
+    --accent:#34D399; --on-accent:#04241B; --surface2:#1A211E;
+    --line:#1F2724; --danger:#FFB4AB; --shadow:none;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;background:var(--bg)}
@@ -29,7 +31,7 @@
   .head p{margin:3px 0 0;font-size:12px;color:var(--muted)}
   form{
     display:flex;align-items:center;gap:8px;
-    background:var(--surface);border:1px solid var(--line);
+    background:var(--surface2);
     border-radius:20px;padding:5px 5px 5px 15px;
   }
   form svg{flex:none;opacity:.5}
@@ -39,7 +41,7 @@
   }
   input::placeholder{color:var(--muted)}
   button{
-    border:0;background:var(--accent);color:#fff;font-family:inherit;
+    border:0;background:var(--accent);color:var(--on-accent);font-family:inherit;
     font-size:14px;font-weight:600;padding:11px 18px;border-radius:15px;
   }
   button:active{transform:scale(.97)}
@@ -50,7 +52,7 @@
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   .tile{
     display:flex;flex-direction:column;align-items:center;gap:7px;
-    background:var(--surface);border:1px solid var(--line);
+    background:var(--surface2);
     border-radius:16px;padding:13px 4px 11px;text-decoration:none;color:var(--text);
     overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
   }
@@ -77,6 +79,33 @@
   .empty{font-size:12.5px;color:var(--muted);line-height:1.7}
   .tiles .empty{grid-column:1/-1;text-align:center;padding:6px 2px}
   .hide{display:none}
+  .tile{transition:transform .12s ease}
+  .tile.dragging{
+    opacity:.92;transform:scale(1.06);position:relative;z-index:5;
+    box-shadow:0 10px 22px rgba(0,0,0,.25);pointer-events:none;
+  }
+  .tile.add{
+    background:transparent;border:2px dashed var(--line);justify-content:center;
+  }
+  .tile.add .plus{font-size:24px;line-height:1;font-weight:700;color:var(--muted)}
+  .sheet-bg{
+    position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45);
+    z-index:30;display:flex;align-items:flex-end;
+  }
+  .sheet{
+    width:100%;background:var(--surface);border-radius:24px 24px 0 0;
+    padding:16px 14px 26px;box-sizing:border-box;
+  }
+  .sheet h3{margin:0;font-size:15px;color:var(--text);font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sheet p{margin:4px 0 14px;font-size:11.5px;color:var(--muted)}
+  .sheet button{
+    display:block;width:100%;text-align:left;border:0;background:var(--surface2);
+    color:var(--text);font-family:inherit;font-size:14.5px;font-weight:600;
+    padding:14px 16px;border-radius:16px;margin-bottom:8px;
+  }
+  .sheet button.danger{color:var(--danger)}
+  .sheet button.cancel{background:transparent;color:var(--muted);text-align:center}
   footer{margin-top:34px;text-align:center;font-size:11px;color:var(--muted)}
   footer b{color:var(--accent);font-weight:600}
 </style>
@@ -101,15 +130,7 @@
 
   <h2 data-i18n="fav">প্রিয় সাইট</h2>
   <div class="tiles" id="tiles">
-    <a class="tile" href="https://www.prothomalo.com"><span class="ico">📰</span><span class="nm" data-i18n="t1">প্রথম আলো</span></a>
-    <a class="tile" href="https://www.kalerkantho.com"><span class="ico">🗞️</span><span class="nm" data-i18n="t2">কালের কণ্ঠ</span></a>
-    <a class="tile" href="https://bangla.bdnews24.com"><span class="ico">📻</span><span class="nm" data-i18n="t3">বিডিনিউজ</span></a>
-    <a class="tile" href="https://bn.wikipedia.org"><span class="ico">📚</span><span class="nm" data-i18n="t4">উইকিপিডিয়া</span></a>
-    <a class="tile" href="https://m.youtube.com"><span class="ico">▶️</span><span class="nm" data-i18n="t5">ইউটিউব</span></a>
-    <a class="tile" href="https://m.facebook.com"><span class="ico">📘</span><span class="nm" data-i18n="t6">ফেসবুক</span></a>
-    <a class="tile" href="https://mail.google.com"><span class="ico">✉️</span><span class="nm" data-i18n="t7">জিমেইল</span></a>
-    <a class="tile" href="https://www.banglanews24.com"><span class="ico">📡</span><span class="nm" data-i18n="t8">বাংলানিউজ</span></a>
-    <p class="empty hide" id="noSites" data-i18n="emptySites">এখনো সাইট নেই। মেনু থেকে হোমে যোগ করুন বেছে নিন।</p>
+    <p class="empty" id="noSites" data-i18n="emptySites">এখনো সাইট নেই। নিচের + চেপে যোগ করুন।</p>
   </div>
 
   <h2 data-i18n="recent">সাম্প্রতিক</h2>
@@ -117,7 +138,7 @@
     <p class="empty" id="empty" data-i18n="empty">এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।</p>
   </div>
 
-  <footer data-i18n-html="footer">Skyble Browser <b>1.2.2</b> · Made in Bangladesh</footer>
+  <footer data-i18n-html="footer">Skyble Browser <b>1.2.4</b> · Made in Bangladesh</footer>
 
 <script>
   var I18N = {
@@ -130,9 +151,11 @@
       fav: "প্রিয় সাইট",
       recent: "সাম্প্রতিক",
       empty: "এখনো কিছু দেখা হয়নি। উপরের বাক্সে লিখে শুরু করুন।",
-      emptySites: "এখনো সাইট নেই। মেনু থেকে হোমে যোগ করুন বেছে নিন।",
+      emptySites: "এখনো সাইট নেই। নিচের + চেপে যোগ করুন।",
       removeSite: "এই সাইটটা হোম থেকে সরাবেন?",
-      footer: "Skyble Browser <b>1.2.2</b> · Made in Bangladesh",
+      addSite: "সাইট যোগ", edit: "এডিট", remove: "মুছুন", cancel: "বাতিল",
+      moveHint: "চেপে ধরে টেনে সরান, আর ট্যাপে এডিট/মুছুন",
+      footer: "Skyble Browser <b>1.2.4</b> · Made in Bangladesh",
       t1: "প্রথম আলো", t2: "কালের কণ্ঠ", t3: "বিডিনিউজ", t4: "উইকিপিডিয়া",
       t5: "ইউটিউব", t6: "ফেসবুক", t7: "জিমেইল", t8: "বাংলানিউজ"
     },
@@ -145,27 +168,58 @@
       fav: "Favourite sites",
       recent: "Recent",
       empty: "Nothing here yet. Type above to start.",
-      emptySites: "No sites yet. Use the menu and pick Add to home.",
+      emptySites: "No sites yet. Tap + to add one.",
       removeSite: "Remove this site from the home grid?",
-      footer: "Skyble Browser <b>1.2.2</b> · Made in Bangladesh",
+      addSite: "Add site", edit: "Edit", remove: "Delete", cancel: "Cancel",
+      moveHint: "Press and hold, then drag to move. Tap for edit or delete.",
+      footer: "Skyble Browser <b>1.2.4</b> · Made in Bangladesh",
       t1: "Prothom Alo", t2: "Kaler Kantho", t3: "BDNews24", t4: "Wikipedia",
       t5: "YouTube", t6: "Facebook", t7: "Gmail", t8: "Banglanews"
     }
   };
 
-  var LANG = "en";
+  // অ্যাপ ম্যাটেরিয়াল ইউ রং পাঠালে হোম পাতাও সেই রঙে রাঙা হয়
+  window.BBTheme = function (bg, surface, surface2, text, muted, accent, onAccent, line, dark) {
+    var r = document.documentElement.style;
+    r.setProperty('--bg', bg);
+    r.setProperty('--surface', surface);
+    r.setProperty('--surface2', surface2);
+    r.setProperty('--text', text);
+    r.setProperty('--muted', muted);
+    r.setProperty('--accent', accent);
+    r.setProperty('--on-accent', onAccent);
+    r.setProperty('--line', line);
+    r.setProperty('--shadow', dark ? 'none' : '0 1px 2px rgba(0,0,0,.06)');
+    document.documentElement.className = dark ? 'dark' : '';
+  };
+
+  var LANG = "bn";
+
+  // অ্যাপ URL-এর hash-এ রং দেয়, তাই প্রথম আঁকাই ঠিক রঙে হয় — আগে সবুজ/সাদা ঝলক নেই
+  function paintFromHash() {
+    var map = {bg:'--bg', sf:'--surface', sf2:'--surface2', tx:'--text',
+               mu:'--muted', ac:'--accent', oa:'--on-accent', ln:'--line'};
+    var style = document.documentElement.style;
+    for (var k in map) {
+      var m = new RegExp("[&#]" + k + "=([0-9a-fA-F]{6})").exec(location.hash || "");
+      if (m) style.setProperty(map[k], "#" + m[1]);
+    }
+  }
 
   function readEnv() {
+    paintFromHash();
     var src = (location.search || "") + "&" + (location.hash || "");
     var m = /[?&#]lang=([^&#]*)/.exec(src);
     if (!m) m = /#(bn|en)\b/.exec(location.hash || "");
-    LANG = "en";
+    LANG = "bn";
     if (m) {
       var v = decodeURIComponent(m[1]).toLowerCase();
       if (v.indexOf("en") === 0) LANG = "en";
     }
     var dark = (location.hash || "").indexOf("dark") >= 0;
     document.documentElement.className = dark ? "dark" : "";
+    document.documentElement.style.setProperty(
+        "--shadow", dark ? "none" : "0 1px 2px rgba(0,0,0,.06)");
   }
 
   function applyLang() {
@@ -222,26 +276,31 @@
   window.setSites = function (list) {
     var box = document.getElementById("tiles");
     if (!box) return;
+    // নতুন তালিকা এলে পুরোনো চাপ/টান/শিটের অবস্থা বাতিল
+    stopPress();
+    closeTileMenu();
+    if (dragTile) dragTile.classList.remove("dragging");
+    dragTile = null;
+    document.body.classList.remove("dragging");
     var items = (list && list.length) ? list : [];
+    var d = I18N[LANG] || I18N.bn;
     box.innerHTML = "";
     if (!items.length) {
-      var d = I18N[LANG] || I18N.bn;
       var p = document.createElement("p");
       p.className = "empty";
       p.id = "noSites";
-      p.setAttribute("data-i18n", "emptySites");
       p.textContent = d.emptySites;
       box.appendChild(p);
-      return;
     }
     for (var i = 0; i < items.length; i++) {
-      var s = items[i];
+      var item = items[i];
       var a = document.createElement("a");
       a.className = "tile";
-      a.href = s.u;
-      a.title = s.n;
+      a.href = item.u;
+      a.title = item.n;
+      a.setAttribute("data-url", item.u);
       var host = "";
-      try { host = new URL(s.u).hostname.replace(/^www\./, ""); } catch (e) { }
+      try { host = new URL(item.u).hostname.replace(/^www\./, ""); } catch (e) { }
       var img = document.createElement("img");
       img.className = "fav";
       img.alt = "";
@@ -255,10 +314,27 @@
       a.appendChild(img);
       var nm = document.createElement("span");
       nm.className = "nm";
-      nm.textContent = s.n;
+      nm.textContent = item.n;
       a.appendChild(nm);
       box.appendChild(a);
     }
+    // শেষ ঘরটা প্লাস — নতুন সাইট যোগ করার জন্য
+    var add = document.createElement("div");
+    add.className = "tile add";
+    var plus = document.createElement("span");
+    plus.className = "plus";
+    plus.textContent = "+";
+    var lbl = document.createElement("span");
+    lbl.className = "nm";
+    lbl.textContent = d.addSite;
+    add.appendChild(plus);
+    add.appendChild(lbl);
+    add.addEventListener("click", function () {
+      if (window.BBHome && typeof window.BBHome.add === "function") {
+        try { window.BBHome.add(); } catch (e) { }
+      }
+    });
+    box.appendChild(add);
     fitNames(box);
   };
 
@@ -282,16 +358,19 @@
     }
   };
 
-  /* --- long press to remove a tile --------------------------------- */
+  /* --- long press: drag to move, tap opens edit/delete ------------- */
 
-  var LONG_PRESS_MS = 450;
-  var MOVE_TOLERANCE = 10;
+  var LONG_PRESS_MS = 420;
+  var MOVE_TOLERANCE = 8;
   var pressTimer = null;
   var pressTile = null;
   var pressX = 0;
   var pressY = 0;
+  var dragTile = null;
+  var dragMoved = false;
   var suppressClick = false;
   var lastTouchAt = 0;
+  var sheetBox = null;
 
   function tileOf(node) {
     while (node && node !== document) {
@@ -301,6 +380,10 @@
     return null;
   }
 
+  function isAddTile(node) {
+    return !!node && !!node.classList && node.classList.contains("add");
+  }
+
   function stopPress() {
     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
     pressTile = null;
@@ -308,37 +391,128 @@
 
   function startPress(tile, x, y) {
     stopPress();
-    if (!tile) return;
+    if (!tile || isAddTile(tile)) return;
     pressTile = tile;
     pressX = x;
     pressY = y;
     pressTimer = setTimeout(function () {
       pressTimer = null;
-      longPress(tile);
+      beginDrag(tile);
     }, LONG_PRESS_MS);
   }
 
-  function tileUrl(tile) {
-    if (!tile) return "";
-    return tile.getAttribute("href") || tile.href || "";
+  function beginDrag(tile) {
+    if (!tile) return;
+    dragTile = tile;
+    dragMoved = false;
+    suppressClick = true;
+    try { if (navigator.vibrate) navigator.vibrate(18); } catch (e) { }
+    tile.classList.add("dragging");
+    document.body.classList.add("dragging");
   }
 
-  function longPress(tile) {
-    var url = tileUrl(tile);
-    if (!url) return;
-    suppressClick = true;
-    try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) { }
-    var d = I18N[LANG] || I18N.bn;
-    var ok = false;
-    try { ok = window.confirm(d.removeSite); } catch (e) { ok = false; }
-    if (ok && window.BBHome && typeof window.BBHome.remove === "function") {
-      try { window.BBHome.remove(url); } catch (e) { }
+  function dragMove(x, y) {
+    if (!dragTile) return;
+    if (Math.abs(x - pressX) > MOVE_TOLERANCE || Math.abs(y - pressY) > MOVE_TOLERANCE) {
+      dragMoved = true;
     }
+    if (!dragMoved) return;
+    var over = tileOf(document.elementFromPoint(x, y));
+    if (!over || over === dragTile || isAddTile(over)) return;
+    var box = dragTile.parentNode;
+    var kids = Array.prototype.slice.call(box.querySelectorAll(".tile:not(.add)"));
+    var from = kids.indexOf(dragTile);
+    var to = kids.indexOf(over);
+    if (from < 0 || to < 0 || from === to) return;
+    if (to > from) box.insertBefore(dragTile, over.nextSibling);
+    else box.insertBefore(dragTile, over);
+  }
+
+  function tileUrls() {
+    var out = [];
+    var nodes = document.querySelectorAll("#tiles .tile:not(.add)");
+    for (var i = 0; i < nodes.length; i++) out.push(nodes[i].getAttribute("data-url"));
+    return out;
+  }
+
+  function endDrag() {
+    if (!dragTile) return;
+    var tile = dragTile;
+    dragTile = null;
+    tile.classList.remove("dragging");
+    document.body.classList.remove("dragging");
+    if (dragMoved) {
+      if (window.BBHome && typeof window.BBHome.order === "function") {
+        try { window.BBHome.order(JSON.stringify(tileUrls())); } catch (e) { }
+      }
+    } else {
+      showTileMenu(tile);
+    }
+  }
+
+  function sheetButton(label, cls, action) {
+    var b = document.createElement("button");
+    b.type = "button";
+    if (cls) b.className = cls;
+    b.textContent = label;
+    b.addEventListener("click", action);
+    return b;
+  }
+
+  function closeTileMenu() {
+    if (sheetBox && sheetBox.parentNode) sheetBox.parentNode.removeChild(sheetBox);
+    sheetBox = null;
+  }
+
+  function showTileMenu(tile) {
+    closeTileMenu();
+    var d = I18N[LANG] || I18N.bn;
+    var url = tile.getAttribute("data-url") || "";
+    var nm = tile.querySelector(".nm");
+    var bg = document.createElement("div");
+    bg.className = "sheet-bg";
+    var sh = document.createElement("div");
+    sh.className = "sheet";
+    var h = document.createElement("h3");
+    h.textContent = nm ? nm.textContent : url;
+    sh.appendChild(h);
+    var hint = document.createElement("p");
+    hint.textContent = d.moveHint;
+    sh.appendChild(hint);
+    sh.appendChild(sheetButton(d.edit, "", function () {
+      closeTileMenu();
+      if (window.BBHome && typeof window.BBHome.edit === "function") {
+        try { window.BBHome.edit(url); } catch (e) { }
+      }
+    }));
+    sh.appendChild(sheetButton(d.remove, "danger", function () {
+      closeTileMenu();
+      var ok = false;
+      try { ok = window.confirm(d.removeSite); } catch (e) { ok = false; }
+      if (ok && window.BBHome && typeof window.BBHome.remove === "function") {
+        try { window.BBHome.remove(url); } catch (e) { }
+      }
+    }));
+    sh.appendChild(sheetButton(d.cancel, "cancel", closeTileMenu));
+    bg.appendChild(sh);
+    bg.addEventListener("click", function (e) {
+      if (e.target === bg) closeTileMenu();
+    });
+    document.body.appendChild(bg);
+    sheetBox = bg;
   }
 
   document.addEventListener("touchstart", function (e) {
     lastTouchAt = Date.now();
     suppressClick = false;
+    if (sheetBox) {
+      // শিটের ভেতরের চাপে শিট বন্ধ হবে না, নইলে বোতামের ক্লিকই হারিয়ে যায়
+      if (sheetBox.contains(e.target)) { stopPress(); return; }
+      closeTileMenu();
+      suppressClick = true;   // বন্ধ হওয়া শিটের নিচের টাইলে ক্লিক যাবে না
+      stopPress();
+      return;
+    }
     var t = tileOf(e.target);
     if (!t) { stopPress(); return; }
     var p = e.touches && e.touches[0];
@@ -346,32 +520,54 @@
   }, { passive: true });
 
   document.addEventListener("touchmove", function (e) {
+    if (dragTile) {
+      e.preventDefault();
+      var p = e.touches && e.touches[0];
+      if (p) dragMove(p.clientX, p.clientY);
+      return;
+    }
     if (!pressTile) return;
-    var p = e.touches && e.touches[0];
-    if (!p) return;
-    if (Math.abs(p.clientX - pressX) > MOVE_TOLERANCE ||
-        Math.abs(p.clientY - pressY) > MOVE_TOLERANCE) stopPress();
-  }, { passive: true });
+    var q = e.touches && e.touches[0];
+    if (!q) return;
+    if (Math.abs(q.clientX - pressX) > MOVE_TOLERANCE ||
+        Math.abs(q.clientY - pressY) > MOVE_TOLERANCE) stopPress();
+  }, { passive: false });
 
-  document.addEventListener("touchend", stopPress, { passive: true });
-  document.addEventListener("touchcancel", stopPress, { passive: true });
+  document.addEventListener("touchend", function () {
+    if (dragTile) endDrag(); else stopPress();
+  }, { passive: true });
+  document.addEventListener("touchcancel", function () {
+    if (dragTile) endDrag(); else stopPress();
+  }, { passive: true });
 
   document.addEventListener("mousedown", function (e) {
     if (Date.now() - lastTouchAt < 800) return;
     suppressClick = false;
+    if (sheetBox) {
+      if (sheetBox.contains(e.target)) { stopPress(); return; }
+      closeTileMenu();
+      suppressClick = true;
+      stopPress();
+      return;
+    }
     var t = tileOf(e.target);
     if (!t) { stopPress(); return; }
     startPress(t, e.clientX, e.clientY);
   });
 
   document.addEventListener("mousemove", function (e) {
+    if (dragTile) { dragMove(e.clientX, e.clientY); return; }
     if (!pressTile) return;
     if (Math.abs(e.clientX - pressX) > MOVE_TOLERANCE ||
         Math.abs(e.clientY - pressY) > MOVE_TOLERANCE) stopPress();
   });
 
-  document.addEventListener("mouseup", stopPress);
-  document.addEventListener("mouseleave", stopPress);
+  document.addEventListener("mouseup", function () {
+    if (dragTile) endDrag(); else stopPress();
+  });
+  document.addEventListener("mouseleave", function () {
+    if (dragTile) endDrag(); else stopPress();
+  });
 
   document.addEventListener("click", function (e) {
     if (!suppressClick) return;

@@ -42,6 +42,9 @@ with the phone and the app stays under one megabyte.
 **Browsing**
 - Up to 50 tabs, with a session that comes back after a restart
 - Live search suggestions, plus suggestions from your own history and bookmarks
+- Home speed dial with Google, Facebook, Instagram, Gmail, GitHub, YouTube,
+  Stack Overflow and MDN; press and hold a tile to drag it into place or to edit
+  and delete it, and use the plus tile to add any site
 - Find in page, print, share, copy link
 - Desktop site mode
 - Set Skyble as the default browser with one tap

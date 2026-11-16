@@ -1,0 +1,3 @@
+New home page speed dial: Google, Facebook, Instagram, Gmail, GitHub, YouTube,
+Stack Overflow and MDN. Press and hold a tile to drag it into a new place, and
+tap it for Edit and Delete. The plus tile at the end adds any website.

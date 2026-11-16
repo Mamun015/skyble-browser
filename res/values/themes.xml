@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- অ্যাপের মূল থিম: ক্রোম আর টেক্সট সিলেকশন যেন ফ্রেমওয়ার্কের টিল না হয়.
+         রং মূলত Theme.java থেকে কোডে বসে; এখানে শুধু ব্র্যান্ড রং। -->
+    <style name="SkybleTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#007A5A</item>
+        <item name="android:colorPrimary">#007A5A</item>
+    </style>
+</resources>

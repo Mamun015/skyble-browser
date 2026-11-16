@@ -4,7 +4,7 @@ import android.content.res.ColorStateList;
 import android.os.Build;
 import android.widget.Switch;
 
-/** সুইচ jelas দেখা যায়: চালু থাকলে সবুজ ভরা, বন্ধ থাকলে ধূসর। */
+/** সুইচ: চালু থাকলে অ্যাকসেন্ট, বন্ধ থাকলে ধূসর — ম্যাটেরিয়াল ইউ রঙের সাথে মেলে। */
 final class SwitchStyle {
 
     private SwitchStyle() { }
@@ -14,12 +14,10 @@ final class SwitchStyle {
             {-android.R.attr.state_checked}
     };
 
-    static void apply(Switch sw, int accent, boolean dark) {
+    static void apply(Switch sw, int accent, int onAccent, int trackOff, int thumbOff) {
         if (Build.VERSION.SDK_INT < 21) return;
-        sw.setThumbTintList(ColorStateList.valueOf(0xFFFFFFFF));
-        sw.setTrackTintList(new ColorStateList(STATES, new int[]{
-                accent,
-                dark ? 0xFF3A4641 : 0xFFC4D0CA
-        }));
+        // বন্ধ সুইচের থাম্বও যেন দেখা যায় — নইলে ট্র্যাকের সাথে মিশে যায়
+        sw.setThumbTintList(new ColorStateList(STATES, new int[]{onAccent, thumbOff}));
+        sw.setTrackTintList(new ColorStateList(STATES, new int[]{accent, trackOff}));
     }
 }

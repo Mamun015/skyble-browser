@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ডায়ালগের বোতাম/চেকবক্স অ্যাপের ব্র্যান্ড অ্যাকসেন্টেই (Theme.java-র লাইট রং) -->
+    <style name="SkybleDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">#007A5A</item>
+    </style>
+    <style name="SkybleDialogDark" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#34D399</item>
+    </style>
+    <!-- values-v31-এ এদেরই ওয়ালপেপার-রঙের সংস্করণ আছে; নিচে না থাকলে API 30-এ id খুঁজে পাওয়া যেত না -->
+    <style name="SkybleDialogDynamic" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">#007A5A</item>
+    </style>
+    <style name="SkybleDialogDynamicDark" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">#34D399</item>
+    </style>
+</resources>

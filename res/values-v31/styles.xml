@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- অ্যান্ড্রয়েড ১২+: ওয়ালপেপারের রঙ চালু থাকলে ডায়ালগও সেই প্যালেট নেয়।
+         বন্ধ থাকলে Java কোড SkybleDialog/SkybleDialogDark বেছে নেয়। -->
+    <style name="SkybleDialogDynamic" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">@android:color/system_accent1_600</item>
+    </style>
+    <style name="SkybleDialogDynamicDark" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@android:color/system_accent1_200</item>
+    </style>
+</resources>

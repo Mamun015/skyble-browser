@@ -32,7 +32,8 @@ public class SettingsActivity extends Activity {
     private SharedPreferences prefs;
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
-    private static final String VERSION = "1.2.2";
+    private int cOnAccent, cOnAccentSoft, cAccent2;
+    private static final String VERSION = "1.2.4";
     private LinearLayout list;
 
     @Override
@@ -45,11 +46,16 @@ public class SettingsActivity extends Activity {
 
         if (Build.VERSION.SDK_INT >= 21) {
             Window w = getWindow();
-            w.setStatusBarColor(cSurface);
+            w.setStatusBarColor(cBg);
             w.setNavigationBarColor(cBg);
+            int flags = 0;
             if (Build.VERSION.SDK_INT >= 23 && !darkMode) {
-                w.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             }
+            if (Build.VERSION.SDK_INT >= 26 && !darkMode) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            w.getDecorView().setSystemUiVisibility(flags);
         }
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(cBg));
 
@@ -57,7 +63,7 @@ public class SettingsActivity extends Activity {
     }
 
     private void pickColors() {
-        Theme t = new Theme(darkMode);
+        Theme t = new Theme(this, darkMode);
         cBg = t.bg;
         cSurface = t.surface;
         cSurface2 = t.surface2;
@@ -66,6 +72,9 @@ public class SettingsActivity extends Activity {
         cAccent = t.accent;
         cAccentSoft = t.accentSoft;
         cLine = t.line;
+        cOnAccent = t.onAccent;
+        cOnAccentSoft = t.onAccentSoft;
+        cAccent2 = t.accent2;
     }
 
     private int dp(float v) {
@@ -109,7 +118,7 @@ public class SettingsActivity extends Activity {
     private void rowBg(View v, boolean pressable) {
         GradientDrawable base = rounded(cSurface, 12);
         if (pressable) {
-            int tint = darkMode ? 0x332BBD8F : 0x22006A4E;
+            int tint = Theme.withAlpha(cAccent, darkMode ? 0x38 : 0x24);
             v.setBackground(new android.graphics.drawable.RippleDrawable(
                     android.content.res.ColorStateList.valueOf(tint), base, base));
         } else {
@@ -183,6 +192,11 @@ public class SettingsActivity extends Activity {
         list.addView(row("theme", Lang.t("থিম"), themeName(), new Runnable() {
             public void run() { pickTheme(); }
         }));
+        if (Theme.available()) {
+            list.addView(switchRow("palette", Lang.t("ওয়ালপেপারের রঙ"),
+                    Lang.t("ম্যাটেরিয়াল ইউ — ফোনের ওয়ালপেপার থেকে রঙ নেয়"),
+                    Theme.enabled(this), "materialyou"));
+        }
         list.addView(switchRow("desktop", Lang.t("ডেস্কটপ সাইট"), prefs.getBoolean("desktop", false), "desktop"));
         list.addView(switchRow("theme", Lang.t("ওয়েবপেজও কালো"),
                 Lang.t("সাইট নিজে ডার্ক থিম দিলে সেটাই ব্যবহার হয়"),
@@ -375,13 +389,14 @@ public class SettingsActivity extends Activity {
 
         final Switch sw = new Switch(this);
         sw.setChecked(on);
-        SwitchStyle.apply(sw, cAccent, darkMode);
+        SwitchStyle.apply(sw, cAccent, cOnAccent, cSurface2, cMuted);
         sw.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(android.widget.CompoundButton b, boolean checked) {
                 state.setText(Lang.onOff(checked));
                 state.setTextColor(checked ? cAccent : cMuted);
                 prefs.edit().putBoolean(key, checked).apply();
-                if (key.equals("dark") && checked != darkMode) {
+                if ((key.equals("dark") && checked != darkMode)
+                        || key.equals("materialyou")) {
                     recreate();
                 }
             }
@@ -455,8 +470,11 @@ public class SettingsActivity extends Activity {
     }
 
     private int dialogTheme() {
-        return darkMode ? android.R.style.Theme_Material_Dialog_Alert
-                : android.R.style.Theme_Material_Light_Dialog_Alert;
+        boolean dyn = Theme.enabled(this);
+        if (dyn) {
+            return darkMode ? R.style.SkybleDialogDynamicDark : R.style.SkybleDialogDynamic;
+        }
+        return darkMode ? R.style.SkybleDialogDark : R.style.SkybleDialog;
     }
 
     private String engineName() {

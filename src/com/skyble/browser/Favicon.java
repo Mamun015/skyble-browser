@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -120,12 +119,8 @@ final class Favicon {
         Bitmap b = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas cv = new Canvas(b);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-        int color = bg;
-        if (host == null || host.length() == 0) {
-            p.setColor(Color.parseColor("#9AA5A0"));
-        } else {
-            p.setColor(color);
-        }
+        // খালি হোস্টেও থিমের অ্যাকসেন্ট — ধূসর বৃত্তে হালকা লেখা পড়া যেত না
+        p.setColor(bg);
         cv.drawCircle(size / 2f, size / 2f, size / 2f, p);
 
         String ch = host == null || host.length() == 0

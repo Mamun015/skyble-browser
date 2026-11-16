@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.2.2";
+    private static final String VERSION = "1.2.4";
     private boolean autoTranslate = true;
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
@@ -112,7 +112,10 @@ public class MainActivity extends Activity {
     private boolean darkMode, desktopMode, forceDark, darkPages, langEn;
     private String uaMobile;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
+    private int cOnAccent, cOnAccentSoft, cAccent2;
+    private long cStamp;
     private long lastBackPress = 0;
+    private boolean pendingPalette;
 
     private ValueCallback<Uri[]> filePathCallback;
     private static final int REQ_FILE = 4201;
@@ -219,11 +222,16 @@ public class MainActivity extends Activity {
 
         if (Build.VERSION.SDK_INT >= 21) {
             Window w = getWindow();
-            w.setStatusBarColor(cSurface);
+            w.setStatusBarColor(cBg);
             w.setNavigationBarColor(cBg);
+            int flags = 0;
             if (Build.VERSION.SDK_INT >= 23 && !darkMode) {
-                w.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             }
+            if (Build.VERSION.SDK_INT >= 26 && !darkMode) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            w.getDecorView().setSystemUiVisibility(flags);
         }
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(cBg));
@@ -300,6 +308,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (pendingPalette && applyPendingPalette()) return;
         Lang.init(prefs);
         if (Lang.isEn() != langEn) {
             recreate();
@@ -329,6 +338,22 @@ public class MainActivity extends Activity {
         }
         // অ্যাপে ফিরে এলে মাঝে মাঝে নতুন ভার্সন দেখে নেয়
         if (Updater.due(this)) checkUpdates(false);
+        // ওয়ালপেপার/সিস্টেম থিম বদলালে প্যালেটও বদলায় — তখন নতুন রঙে আঁকি
+        Theme now = new Theme(this, darkMode);
+        if (cStamp != 0) {
+            if (now.stamp() != cStamp) {
+                // ফুলস্ক্রিন ভিডিও বা প্রাইভেট ট্যাব থাকলে এখনই নতুন করে আঁকি না,
+                // নইলে ট্যাবের ব্যাক-হিস্টরি বা প্রাইভেট ট্যাব হারিয়ে যায়
+                if (fullView != null || hasPrivate() || !prefs.getBoolean("restore", true)) {
+                    pendingPalette = true;
+                } else {
+                    saveSession();  // recreate() নতুন করে খুললেও ট্যাবগুলো ফিরে আসবে
+                    recreate();
+                }
+            } else {
+                pendingPalette = false;   // আবার আগের প্যালেটে ফিরেছে
+            }
+        }
     }
 
     @Override
@@ -387,8 +412,24 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- colors
 
+    private boolean hasPrivate() {
+        for (Tab t : tabs) if (t.incognito) return true;
+        return false;
+    }
+
+    /** প্যালেট বদলেছে, আর এখন নিরাপদে নতুন করে আঁকা যায় কি না */
+    private boolean applyPendingPalette() {
+        if (!pendingPalette || fullView != null || hasPrivate()) return false;
+        // "শেষ ট্যাব ফিরিয়ে আনুন" বন্ধ থাকলে recreate() সব ট্যাব মুছে ফেলবে
+        if (!prefs.getBoolean("restore", true)) return false;
+        pendingPalette = false;
+        saveSession();
+        recreate();
+        return true;
+    }
+
     private void pickColors() {
-        Theme t = new Theme(darkMode);
+        Theme t = new Theme(this, darkMode);
         cBg = t.bg;
         cSurface = t.surface;
         cSurface2 = t.surface2;
@@ -397,6 +438,20 @@ public class MainActivity extends Activity {
         cAccent = t.accent;
         cAccentSoft = t.accentSoft;
         cLine = t.line;
+        cOnAccent = t.onAccent;
+        cOnAccentSoft = t.onAccentSoft;
+        cAccent2 = t.accent2;
+        cStamp = t.stamp();
+    }
+
+    /** #RRGGBB লেখা — HTML/JS-এ রং বসাতে */
+    static String hex(int color) {
+        return "#" + hex6(color);
+    }
+
+    /** ঘরের নম্বর ছাড়া RRGGBB — URL-এর hash-এ */
+    static String hex6(int color) {
+        return String.format(java.util.Locale.US, "%06X", 0xFFFFFF & color);
     }
 
     int dp(float v) {
@@ -440,7 +495,7 @@ public class MainActivity extends Activity {
         mask.setColor(Color.WHITE);
         mask.setCornerRadius(dp(radius));
         android.content.res.ColorStateList tint = ColorStateList.valueOf(
-                darkMode ? 0x2E34D399 : 0x1A00795A);
+                Theme.withAlpha(cAccent, darkMode ? 0x38 : 0x24));
         v.setBackground(new android.graphics.drawable.RippleDrawable(tint, null, mask));
     }
 
@@ -451,7 +506,7 @@ public class MainActivity extends Activity {
         mask.setColor(Color.WHITE);
         mask.setCornerRadius(dp(radius));
         android.content.res.ColorStateList tint = ColorStateList.valueOf(
-                darkMode ? 0x2E34D399 : 0x1A00795A);
+                Theme.withAlpha(cAccent, darkMode ? 0x38 : 0x24));
         v.setBackground(new android.graphics.drawable.RippleDrawable(tint, base, mask));
     }
 
@@ -544,7 +599,7 @@ public class MainActivity extends Activity {
         LinearLayout addrPill = new LinearLayout(this);
         addrPill.setOrientation(LinearLayout.HORIZONTAL);
         addrPill.setGravity(Gravity.CENTER_VERTICAL);
-        addrPill.setBackground(roundedBorder(cSurface, 26));
+        addrPill.setBackground(rounded(cSurface2, 26));
         if (Build.VERSION.SDK_INT >= 21) addrPill.setElevation(dp(1));
         LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -593,10 +648,10 @@ public class MainActivity extends Activity {
         updatePill = new TextView(this);
         updatePill.setTextSize(11);
         updatePill.setTypeface(Typeface.DEFAULT_BOLD);
-        updatePill.setTextColor(cAccent);
+        updatePill.setTextColor(cOnAccentSoft);
         updatePill.setGravity(Gravity.CENTER);
         updatePill.setPadding(dp(8), dp(4), dp(8), dp(4));
-        updatePill.setBackground(roundedBorder(cAccentSoft, 20));
+        updatePill.setBackground(rounded(cAccentSoft, 20));
         updatePill.setVisibility(View.GONE);
         updatePill.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -648,10 +703,10 @@ public class MainActivity extends Activity {
         tubePill = new TextView(this);
         tubePill.setTextSize(11);
         tubePill.setTypeface(Typeface.DEFAULT_BOLD);
-        tubePill.setTextColor(cAccent);
+        tubePill.setTextColor(cOnAccentSoft);
         tubePill.setGravity(Gravity.CENTER);
         tubePill.setPadding(dp(12), dp(5), dp(12), dp(5));
-        tubePill.setBackground(roundedBorder(cAccentSoft, 20));
+        tubePill.setBackground(rounded(cAccentSoft, 20));
         tubePill.setVisibility(View.GONE);
         pillTick.postDelayed(pillWatch, 700);
         tubePill.setOnClickListener(new View.OnClickListener() {
@@ -675,7 +730,7 @@ public class MainActivity extends Activity {
 
         suggestBox = new LinearLayout(this);
         suggestBox.setOrientation(LinearLayout.VERTICAL);
-        suggestBox.setBackground(roundedBorder(cSurface, 16));
+        suggestBox.setBackground(rounded(cSurface2, 16));
 
         // কীবোর্ডের সাথে তালিকা স্ক্রিনের বাইরে চলে যাবে না — বেশি সারি হলে ভেতরে স্ক্রল
         suggestScroll = new ScrollView(this);
@@ -689,7 +744,10 @@ public class MainActivity extends Activity {
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
         progress.setProgress(0);
-        if (Build.VERSION.SDK_INT >= 21) progress.setProgressTintList(ColorStateList.valueOf(cAccent));
+        if (Build.VERSION.SDK_INT >= 21) {
+            progress.setProgressTintList(ColorStateList.valueOf(cAccent));
+            progress.setProgressBackgroundTintList(ColorStateList.valueOf(Theme.withAlpha(cAccent, 0x33)));
+        }
         rootView.addView(progress, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(2)));
 
@@ -822,7 +880,7 @@ public class MainActivity extends Activity {
         LinearLayout menuCircle = new LinearLayout(this);
         menuCircle.setGravity(Gravity.CENTER);
         menuCircle.setBackground(circle);
-        ImageView g = icon("menu", 20, darkMode ? Color.parseColor("#04241B") : Color.WHITE);
+        ImageView g = icon("menu", 20, cOnAccent);
         g.setLayoutParams(new LinearLayout.LayoutParams(dp(20), dp(20)));
         menuCircle.addView(g);
         box.addView(menuCircle, new LinearLayout.LayoutParams(dp(32), dp(32)));
@@ -937,7 +995,7 @@ public class MainActivity extends Activity {
         if (brandView == null) return;
         if (on) {
             brandView.setText(Lang.t("প্রাইভেট"));
-            brandView.setTextColor(darkMode ? 0xFFB39DDB : 0xFF5E35B1);
+            brandView.setTextColor(cAccent2);
             if (lockView != null) lockView.setText("🕶");
         } else {
             brandView.setText(Lang.t("Skyble Browser"));
@@ -979,12 +1037,13 @@ public class MainActivity extends Activity {
         selectTab(activeIndex);
         updateTabBadge();
         if (wasPrivate) clearPrivateLeftovers();
+        applyPendingPalette();
     }
 
     private void showTabSwitcher() {
         hideSuggestions();
         final FrameLayout box = new FrameLayout(this);
-        box.setBackgroundColor(darkMode ? 0xF7080B0A : 0xF7FFFFFF);
+        box.setBackgroundColor(Theme.withAlpha(cBg, 0xF7));
 
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
@@ -1027,7 +1086,7 @@ public class MainActivity extends Activity {
         add.setText(Lang.t("＋ নতুন ট্যাব"));
         add.setTextSize(13);
         add.setTypeface(Typeface.DEFAULT_BOLD);
-        add.setTextColor(cAccent);
+        add.setTextColor(cOnAccentSoft);
         add.setGravity(Gravity.CENTER);
         add.setPadding(dp(12), dp(11), dp(12), dp(11));
         add.setBackground(pill(cAccentSoft, 16));
@@ -1073,8 +1132,7 @@ public class MainActivity extends Activity {
             card.setOrientation(LinearLayout.HORIZONTAL);
             card.setGravity(Gravity.CENTER_VERTICAL);
             card.setPadding(dp(12), dp(12), dp(6), dp(12));
-            GradientDrawable cardBg = rounded(i == activeIndex ? cAccentSoft : cSurface, 16);
-            cardBg.setStroke(dp(1), i == activeIndex ? cAccent : cLine);
+            GradientDrawable cardBg = rounded(i == activeIndex ? cAccentSoft : cSurface2, 16);
             card.setBackground(cardBg);
             rippleOn(card, 16, cardBg);
 
@@ -1085,7 +1143,7 @@ public class MainActivity extends Activity {
             if (isRealPage(t.url)) {
                 ImageView icon = new ImageView(this);
                 icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                Favicon.bind(this, t.url, icon, cAccent, Color.WHITE);
+                Favicon.bind(this, t.url, icon, cAccent, cOnAccent);
                 LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(22), dp(22));
                 ilp.rightMargin = dp(10);
                 card.addView(icon, ilp);
@@ -1176,7 +1234,7 @@ public class MainActivity extends Activity {
     private void showMenu() {
         hideSuggestions();
         final FrameLayout box = new FrameLayout(this);
-        box.setBackgroundColor(0x8A000000);
+        box.setBackgroundColor(0x52000000);   // ম্যাটেরিয়াল স্ক্রিম
         box.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { closeOverlay(); }
         });
@@ -1184,10 +1242,9 @@ public class MainActivity extends Activity {
         LinearLayout sheet = new LinearLayout(this);
         sheet.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(darkMode ? cSurface : cBg);
+        bg.setColor(cSurface);
         float r = dp(26);
         bg.setCornerRadii(new float[]{r, r, r, r, r, r, r, r});
-        bg.setStroke(dp(1), cLine);
         sheet.setBackground(bg);
         if (Build.VERSION.SDK_INT >= 21) sheet.setElevation(dp(20));
         sheet.setPadding(dp(10), dp(6), dp(10), dp(16));
@@ -1196,7 +1253,7 @@ public class MainActivity extends Activity {
         });
 
         View grip = new View(this);
-        grip.setBackground(rounded(cLine, 2));
+        grip.setBackground(rounded(Theme.withAlpha(cMuted, 0x59), 2));
         LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(dp(38), dp(4));
         glp.gravity = Gravity.CENTER_HORIZONTAL;
         glp.topMargin = dp(8);
@@ -1382,7 +1439,7 @@ public class MainActivity extends Activity {
         circleBg.setShape(GradientDrawable.OVAL);
         circleBg.setColor(cAccentSoft);
         circle.setBackground(circleBg);
-        ImageView g = icon(iconName, 24, cAccent);
+        ImageView g = icon(iconName, 24, cOnAccentSoft);
         g.setLayoutParams(new LinearLayout.LayoutParams(dp(24), dp(24)));
         circle.addView(g);
         b.addView(circle, new LinearLayout.LayoutParams(dp(48), dp(48)));
@@ -1473,7 +1530,7 @@ public class MainActivity extends Activity {
         LinearLayout tile = new LinearLayout(this);
         tile.setGravity(Gravity.CENTER);
         tile.setBackground(rounded(cAccentSoft, 13));
-        tile.addView(icon(icon, 23, cAccent));
+        tile.addView(icon(icon, 23, cOnAccentSoft));
         row.addView(tile, new LinearLayout.LayoutParams(dp(42), dp(42)));
 
         LinearLayout texts = new LinearLayout(this);
@@ -1539,7 +1596,7 @@ public class MainActivity extends Activity {
         final Switch sw = new Switch(this);
         sw.setTag("bb_switch");
         sw.setChecked(on);
-        SwitchStyle.apply(sw, cAccent, darkMode);
+        SwitchStyle.apply(sw, cAccent, cOnAccent, cSurface2, cMuted);
         sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton b, boolean checked) {
                 state.setText(Lang.onOff(checked));
@@ -1583,7 +1640,7 @@ public class MainActivity extends Activity {
             chip.setTypeface(Typeface.DEFAULT_BOLD);
             chip.setGravity(Gravity.CENTER);
             chip.setPadding(dp(4), dp(9), dp(4), dp(9));
-            chip.setTextColor(sel ? (darkMode ? Color.parseColor("#04241B") : Color.WHITE) : cMuted);
+            chip.setTextColor(sel ? cOnAccent : cMuted);
             chip.setBackground(sel ? rounded(cAccent, 12) : null);
             chip.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
@@ -1803,6 +1860,7 @@ public class MainActivity extends Activity {
         bar.setMax(1000);
         if (Build.VERSION.SDK_INT >= 21) {
             bar.setProgressTintList(ColorStateList.valueOf(cAccent));
+            bar.setProgressBackgroundTintList(ColorStateList.valueOf(Theme.withAlpha(cAccent, 0x33)));
         }
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(6));
@@ -1965,7 +2023,7 @@ public class MainActivity extends Activity {
 
         ImageView icon = new ImageView(this);
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        Favicon.bind(this, url, icon, cAccent, Color.WHITE);
+        Favicon.bind(this, url, icon, cAccent, cOnAccent);
         LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(30), dp(30));
         ilp.rightMargin = dp(14);
         row.addView(icon, ilp);
@@ -2117,31 +2175,63 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- favourite sites
 
+    /** এই সংস্করণের ডিফল্ট ৮টি সাইট; পুরোনো তালিকা একবারেই এতে বদলে যায় */
+    private static final int SITES_REV = 2;
+    private static final String[] OLD_SITE_URLS = {
+            "https://www.prothomalo.com", "https://www.kalerkantho.com",
+            "https://bangla.bdnews24.com", "https://bn.wikipedia.org",
+            "https://m.youtube.com", "https://m.facebook.com",
+            "https://mail.google.com", "https://www.banglanews24.com"
+    };
+
     private List<String[]> defaultSites() {
         List<String[]> s = new ArrayList<>();
-        s.add(new String[]{Lang.t("প্রথম আলো"), "https://www.prothomalo.com"});
-        s.add(new String[]{Lang.t("কালের কণ্ঠ"), "https://www.kalerkantho.com"});
-        s.add(new String[]{Lang.t("বিডিনিউজ২৪"), "https://bangla.bdnews24.com"});
-        s.add(new String[]{Lang.t("উইকিপিডিয়া"), "https://bn.wikipedia.org"});
-        s.add(new String[]{Lang.t("ইউটিউব"), "https://m.youtube.com"});
-        s.add(new String[]{Lang.t("ফেসবুক"), "https://m.facebook.com"});
-        s.add(new String[]{Lang.t("জিমেইল"), "https://mail.google.com"});
-        s.add(new String[]{Lang.t("বাংলানিউজ"), "https://www.banglanews24.com"});
+        s.add(new String[]{"Google", "https://www.google.com"});
+        s.add(new String[]{"Facebook", "https://m.facebook.com"});
+        s.add(new String[]{"Instagram", "https://www.instagram.com"});
+        s.add(new String[]{"Gmail", "https://mail.google.com"});
+        s.add(new String[]{"GitHub", "https://github.com"});
+        s.add(new String[]{"YouTube", "https://m.youtube.com"});
+        s.add(new String[]{"Stack Overflow", "https://stackoverflow.com"});
+        s.add(new String[]{"MDN", "https://developer.mozilla.org"});
         return s;
     }
 
+    private static boolean isOldSite(String url) {
+        for (String u : OLD_SITE_URLS) if (u.equals(url)) return true;
+        return false;
+    }
+
     private List<String[]> loadSites() {
-        if (prefs.getString("sites", "").length() == 0) {
-            List<String[]> d = defaultSites();
-            saveList("sites", d);
-            return d;
+        // আগের ভার্সনের ডিফল্ট তালিকা থাকলে নতুন ৮টি ডিফল্ট বসে,
+        // কিন্তু ইউজার নিজে যোগ করা সাইটগুলো হারায় না
+        if (prefs.getInt("sites_rev", 1) < SITES_REV) {
+            List<String[]> old = loadList("sites");
+            // নতুন ইনস্টলে ডিফল্ট আসবে; ইউজার সব মুছে ফেললে খালিই থাকবে
+            List<String[]> merged = (prefs.contains("sites") && old.isEmpty())
+                    ? new ArrayList<String[]>() : defaultSites();
+            for (String[] row : old) {
+                if (isOldSite(row[1])) continue;
+                boolean dup = false;
+                for (String[] have : merged) if (have[1].equals(row[1])) dup = true;
+                if (!dup) merged.add(row);
+            }
+            saveList("sites", merged);
+            prefs.edit().putInt("sites_rev", SITES_REV).apply();
+            return merged;
         }
-        List<String[]> s = loadList("sites");
-        if (s.isEmpty()) {
-            s = defaultSites();
-            saveList("sites", s);
-        }
-        return s;
+        // [] মানে ইউজার নিজে সব সরিয়েছে — তখন ডিফল্ট ফিরিয়ে আনা যাবে না
+        return loadList("sites");
+    }
+
+    /** হোম পাতার রং অ্যাপের থিমের সাথে মেলে — ম্যাটেরিয়াল ইউ প্যালেটও */
+    private void injectTheme(WebView view) {
+        if (view == null) return;
+        String js = "window.BBTheme&&window.BBTheme('" + hex(cBg) + "','" + hex(cSurface)
+                + "','" + hex(cSurface2) + "','" + hex(cText) + "','" + hex(cMuted)
+                + "','" + hex(cAccent) + "','" + hex(cOnAccent) + "','" + hex(cLine)
+                + "'," + (darkMode ? "true" : "false") + ");";
+        view.evaluateJavascript(js, null);
     }
 
     private void injectSites(WebView view) {
@@ -2204,20 +2294,80 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** হোম পেজের JS থেকে ডাকা হয় — লম্বা চাপে সাইট সরানোর জন্য */
+    /** হোম পেজের JS থেকে ডাকা হয় — যোগ, এডিট, সরানো আর টাইল সাজানো */
     private class HomeBridge {
+        private final WebView page;
+
+        HomeBridge(WebView page) {
+            this.page = page;
+        }
+
+        /** এই ব্রিজটা যে WebView-এর, সেটাই হোম পাতা কি না — অন্য ট্যাবের পেজ নয় */
+        private boolean onHome() {
+            String u = page == null ? null : page.getUrl();
+            return u != null && u.startsWith(HOME_URL);
+        }
+
+        @JavascriptInterface
+        public void add() {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    if (!onHome()) return;
+                    addSiteDialog(true);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void edit(final String url) {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    if (!onHome()) return;
+                    editSiteDialog(url);
+                }
+            });
+        }
+
         @JavascriptInterface
         public void remove(final String url) {
             runOnUiThread(new Runnable() {
                 public void run() {
-                    // শুধু নিজের হোম পেজ থেকেই ডাকা হয়, বাইরের সাইট থেকে নয়
-                    if (current == null) return;
-                    String now = current.getUrl();
-                    if (now == null || !now.startsWith(HOME_URL)) return;
+                    if (!onHome()) return;
                     removeFromHome(url);
                 }
             });
         }
+
+        /** টানার পরে নতুন ক্রম — URL-এর তালিকা */
+        @JavascriptInterface
+        public void order(final String json) {
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    if (!onHome()) return;
+                    saveSiteOrder(json);
+                }
+            });
+        }
+    }
+
+    private void saveSiteOrder(String json) {
+        List<String[]> have = loadSites();
+        List<String[]> out = new ArrayList<>();
+        try {
+            JSONArray arr = new JSONArray(json);
+            for (int i = 0; i < arr.length(); i++) {
+                String u = arr.optString(i, "");
+                for (int j = 0; j < have.size(); j++) {
+                    if (have.get(j)[1].equals(u)) {
+                        out.add(have.remove(j));
+                        break;
+                    }
+                }
+            }
+        } catch (Exception ignored) { }
+        out.addAll(have);   // তালিকায় না আসা সারি শেষে থাকবে
+        saveList("sites", out);
+        refreshHomePages();
     }
 
     // ---------------------------------------------------------------- media
@@ -2478,7 +2628,7 @@ public class MainActivity extends Activity {
 
             ImageView icon = new ImageView(this);
             icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            Favicon.bind(this, url, icon, cAccent, Color.WHITE);
+            Favicon.bind(this, url, icon, cAccent, cOnAccent);
             LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(30), dp(30));
             ilp.rightMargin = dp(12);
             row.addView(icon, ilp);
@@ -2547,7 +2697,7 @@ public class MainActivity extends Activity {
         plus.setPadding(0, dp(12), 0, dp(12));
         add.addView(plus);
         add.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { addSiteDialog(); }
+            public void onClick(View v) { addSiteDialog(false); }
         });
         panel.addView(add);
 
@@ -2587,7 +2737,7 @@ public class MainActivity extends Activity {
         if (current != null) injectSites(current);
     }
 
-    private void addSiteDialog() {
+    private void addSiteDialog(final boolean fromHome) {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(22), dp(10), dp(22), 0);
@@ -2617,11 +2767,78 @@ public class MainActivity extends Activity {
                     }
                     if (n.length() == 0) n = Favicon.hostOf(u);
                     List<String[]> sites = loadSites();
+                    for (String[] have : sites) {
+                        if (have[1].equals(u)) {
+                            toast(Lang.t("সাইটটা আগেই হোমে আছে"));
+                            return;
+                        }
+                    }
                     sites.add(new String[]{n, u});
                     saveList("sites", sites);
-                    closeOverlay();
-                    showSiteEditor();
-                    if (current != null) injectSites(current);
+                    if (fromHome) {
+                        toast(Lang.t("হোমে যোগ হয়েছে"));
+                        refreshHomePages();
+                    } else {
+                        closeOverlay();
+                        showSiteEditor();
+                        if (current != null) injectSites(current);
+                    }
+                })
+                .setNegativeButton(Lang.t("বাতিল"), null)
+                .show();
+    }
+
+    /** হোমের টাইলের নাম/ঠিকানা বদলানোর ডায়ালগ */
+    private void editSiteDialog(final String url) {
+        final List<String[]> sites = loadSites();
+        int index = -1;
+        for (int i = 0; i < sites.size(); i++) if (sites.get(i)[1].equals(url)) index = i;
+        if (index < 0) return;
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(10), dp(22), 0);
+
+        final EditText name = new EditText(this);
+        name.setText(sites.get(index)[0]);
+        name.setHint(Lang.t("নাম (যেমন প্রথম আলো)"));
+        name.setSingleLine(true);
+        box.addView(name);
+
+        final EditText addr = new EditText(this);
+        addr.setText(sites.get(index)[1]);
+        addr.setHint(Lang.t("ঠিকানা (prothomalo.com)"));
+        addr.setSingleLine(true);
+        addr.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
+        box.addView(addr);
+
+        dialog().setTitle(Lang.t("সাইট এডিট"))
+                .setView(box)
+                .setPositiveButton(Lang.t("সেভ"), (d, w) -> {
+                    String n = name.getText().toString().trim();
+                    String u = addr.getText().toString().trim();
+                    if (u.length() == 0) {
+                        toast(Lang.t("সাইটের ঠিকানা লিখো"));
+                        return;
+                    }
+                    if (!u.startsWith("http://") && !u.startsWith("https://")) {
+                        u = "https://" + u;
+                    }
+                    if (n.length() == 0) n = Favicon.hostOf(u);
+                    List<String[]> now = loadSites();
+                    int at = -1;
+                    for (int i = 0; i < now.size(); i++) {
+                        if (now.get(i)[1].equals(u) && !u.equals(url)) {
+                            toast(Lang.t("সাইটটা আগেই হোমে আছে"));
+                            return;
+                        }
+                        if (now.get(i)[1].equals(url)) at = i;
+                    }
+                    if (at < 0) return;   // এর মধ্যে সরিয়ে ফেলা হয়েছে
+                    now.set(at, new String[]{n, u});
+                    saveList("sites", now);
+                    toast(Lang.t("সেভ হয়েছে"));
+                    refreshHomePages();
                 })
                 .setNegativeButton(Lang.t("বাতিল"), null)
                 .show();
@@ -2795,7 +3012,7 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(prefs.getBoolean("js", true));
         web.addJavascriptInterface(new TranslateBridge(), "BBTranslate");
-        web.addJavascriptInterface(new HomeBridge(), "BBHome");
+        web.addJavascriptInterface(new HomeBridge(web), "BBHome");
         s.setDomStorageEnabled(!incognito);
         s.setDatabaseEnabled(!incognito);
         // প্রাইভেট ট্যাব: কিছুই ফোনে জমা হয় না
@@ -2888,6 +3105,7 @@ public class MainActivity extends Activity {
                 }
                 if (view == current) updateTubePill(url);
                 if (url != null && url.startsWith(HOME_URL)) {
+                    injectTheme(view);
                     injectSites(view);
                     injectRecent(view);
                 }
@@ -3138,9 +3356,13 @@ public class MainActivity extends Activity {
     }
 
     private String homeUrl() {
+        // রংগুলো হোম পাতার URL-এ দেওয়া হয়, তাই পাতাটা প্রথম আঁকা থেকেই ঠিক রঙে বসে
         String hash = "lang=" + (Lang.isEn() ? "en" : "bn");
         if (darkMode) hash = hash + "&dark";
-        return HOME_URL + "#" + hash;
+        return HOME_URL + "#" + hash
+                + "&bg=" + hex6(cBg) + "&sf=" + hex6(cSurface) + "&sf2=" + hex6(cSurface2)
+                + "&tx=" + hex6(cText) + "&mu=" + hex6(cMuted) + "&ac=" + hex6(cAccent)
+                + "&oa=" + hex6(cOnAccent) + "&ln=" + hex6(cLine);
     }
 
     private boolean adBlockOn() {
@@ -3589,16 +3811,17 @@ public class MainActivity extends Activity {
 
     private void showErrorPage(WebView view, String url, int code, String desc) {
         String html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'>"
-                + "<style>body{font-family:sans-serif;background:" + (darkMode ? "#080B0A" : "#FFFFFF")
-                + ";color:" + (darkMode ? "#EAF1EE" : "#0D1412") + ";padding:40px 24px;text-align:center}"
-                + "h2{font-size:18px;margin:0 0 8px}p{font-size:13px;color:#8D9A95;word-break:break-all}"
-                + "a{display:inline-block;margin-top:20px;background:" + (darkMode ? "#34D399" : "#007A5A")
-                + ";color:" + (darkMode ? "#04241B" : "#fff")
+                + "<style>body{font-family:sans-serif;background:" + hex(cBg)
+                + ";color:" + hex(cText) + ";padding:40px 24px;text-align:center}"
+                + "h2{font-size:18px;margin:0 0 8px}p{font-size:13px;color:" + hex(cMuted)
+                + ";word-break:break-all}"
+                + "a{display:inline-block;margin-top:20px;background:" + hex(cAccent)
+                + ";color:" + hex(cOnAccent)
                 + ";text-decoration:none;padding:12px 22px;border-radius:16px;font-size:14px}</style>"
                 + Lang.t("<body><div style='font-size:40px'>📡</div><h2>পেজ লোড হয়নি</h2>")
                 + Lang.t("<p>ইন্টারনেট সংযোগ দেখুন, তারপর আবার চেষ্টা করুন।</p>")
                 + "<p style='font-size:11px'>" + url + "</p>"
-                + (code == 0 ? "" : "<p style='font-size:11px;color:#8D9A95'>"
+                + (code == 0 ? "" : "<p style='font-size:11px;color:" + hex(cMuted) + "'>"
                         + Lang.t("ত্রুটি") + " " + code + (desc.length() == 0 ? "" : " · " + desc) + "</p>")
                 + Lang.t("<a href='skyble://reload'>আবার চেষ্টা করুন</a></body></html>");
         view.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
@@ -3688,9 +3911,15 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- dialogs
 
     private AlertDialog.Builder dialog() {
-        return new AlertDialog.Builder(this,
-                darkMode ? android.R.style.Theme_Material_Dialog_Alert
-                        : android.R.style.Theme_Material_Light_Dialog_Alert);
+        // ওয়ালপেপারের রঙ বন্ধ থাকলে ডায়ালগেও পুরোনো ব্র্যান্ড রং
+        boolean dyn = Theme.enabled(this);
+        int style;
+        if (dyn) {
+            style = darkMode ? R.style.SkybleDialogDynamicDark : R.style.SkybleDialogDynamic;
+        } else {
+            style = darkMode ? R.style.SkybleDialogDark : R.style.SkybleDialog;
+        }
+        return new AlertDialog.Builder(this, style);
     }
 
     private void showList(String title, String key, final boolean clearable) {

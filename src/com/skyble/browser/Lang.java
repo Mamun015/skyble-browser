@@ -114,6 +114,8 @@ public class Lang {
         EN.put("ডিফল্ট ব্রাউজার সেট হয়েছে", "Default browser set");
         EN.put("ডেটা", "Data");
         EN.put("ডেস্কটপ সাইট", "Desktop site");
+        EN.put("ওয়ালপেপারের রঙ", "Wallpaper colours");
+        EN.put("ম্যাটেরিয়াল ইউ — ফোনের ওয়ালপেপার থেকে রঙ নেয়", "Material You — takes colours from your wallpaper");
         EN.put("তালিকা মুছবেন?", "Clear the list?");
         EN.put("থিম", "Theme");
         EN.put("থিম বদলালে পেজও বদলাবে", "Changing the theme changes pages too");
@@ -190,7 +192,7 @@ public class Lang {
         EN.put("শেষ ট্যাব ফিরিয়ে আনুন", "Restore last tabs");
         EN.put("সংযোগ হচ্ছে…", "Connecting…");
         EN.put("সংস্করণ", "Version");
-        EN.put("সংস্করণ ১.২.১.১২", "Version 1.3.0");
+        EN.put("সংস্করণ ১.২.১.১২", "Version 1.2.3");
         EN.put("সব ট্যাব", "All tabs");
         EN.put("সব ট্যাব বন্ধ", "Close all tabs");
         EN.put("সব ট্যাব বন্ধ করবেন?", "Close all tabs?");
@@ -206,6 +208,9 @@ public class Lang {
         EN.put("সম্পন্ন হয়েছে", "Completed");
         EN.put("সর্বোচ্চ ", "Maximum ");
         EN.put("সাইটের ঠিকানা লিখো", "Enter the site address");
+        EN.put("সাইট এডিট", "Edit site");
+        EN.put("সেভ", "Save");
+        EN.put("সেভ হয়েছে", "Saved");
         EN.put("সাধারণ", "General");
         EN.put("সামনে", "Forward");
         EN.put("সার্চ ইঞ্জিন", "Search engine");
@@ -220,8 +225,8 @@ public class Lang {
         EN.put("সোর্স কোড", "Source code");
         EN.put("স্বাভাবিক (১০০%)", "Normal (100%)");
         EN.put("হোম", "Home");
-        EN.put("১.২", "1.3.0");
-        EN.put("১.২.১.১২", "1.3.0");
+        EN.put("১.২", "1.2.3");
+        EN.put("১.২.১.১২", "1.2.3");
         EN.put("＋ নতুন ট্যাব", "+ New tab");
         EN.put("বিজ্ঞাপন ও ট্র্যাকার ব্লক", "Block ads and trackers");
         EN.put("জানা বিজ্ঞাপন সার্ভার আগেই আটকে দেয়", "Known ad and tracker hosts are stopped before they load");
