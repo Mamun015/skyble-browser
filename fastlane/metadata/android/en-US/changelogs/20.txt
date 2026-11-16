@@ -1,0 +1,4 @@
+Tube is now a separate app with its own download list.
+
+- "Open in Tube app" finds both the new app and the old helper
+- the helper download button now points at the Skyble Tube release

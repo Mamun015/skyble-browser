@@ -242,6 +242,7 @@ public class Lang {
         EN.put("ইনস্টল হয়ে গেছে", "Already installed");
         EN.put("এখনো ইনস্টল হয়নি", "Not installed yet");
         EN.put("হেল্পার অ্যাপ খোলা যায়নি", "Could not open the helper app");
+        EN.put("Tube অ্যাপ খোলা যায়নি", "Could not open the Tube app");
         EN.put("ডাউনলোড শেষ হলে ফাইলটা খুলে ইনস্টল করো", "When the download ends, open the file and install it");
         EN.put("সেটিংসে অজানা সোর্স থেকে ইনস্টল চালু করতে হবে", "Turn on install from unknown sources in Settings");
         EN.put("ইউটিউব থেকে ভিডিও নামাতে ছোট একটা হেল্পার অ্যাপ লাগে। একবার ইনস্টল করলেই ব্রাউজার থেকে সোজা চলবে।", "Downloading from YouTube needs a small helper app. Install it once and the browser drives it from then on.");

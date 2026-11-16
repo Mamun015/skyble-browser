@@ -2205,18 +2205,28 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- tube plugin
 
-    private static final String PLUGIN_PKG = "com.skyble.tube.plugin";
-    private static final String PLUGIN_ACTION = "com.skyble.tube.plugin.DOWNLOAD";
+    /** নতুন Tube অ্যাপ আগে; পুরনো প্লাগিন প্যাকেজও এখনো কাজ করে */
+    private static final String[] TUBE_PKGS = {
+            "com.skyble.tube", "com.skyble.tube.plugin"};
+    private static final String[] TUBE_ACTIONS = {
+            "com.skyble.tube.DOWNLOAD", "com.skyble.tube.plugin.DOWNLOAD"};
+    /** Tube এখন আলাদা অ্যাপ, নিজের রিপো থেকেই নামে */
     private static final String PLUGIN_APK_URL =
-            "https://github.com/Mamun015/skyble-browser/releases/latest/download/SkybleTubePlugin.apk";
+            "https://github.com/Mamun015/skyble-tube/releases/latest/download/SkybleTube.apk";
+
+    /** ইনস্টল থাকা Tube অ্যাপের ইনডেক্স, কিছু না থাকলে -1 */
+    private int tubeApp() {
+        for (int i = 0; i < TUBE_PKGS.length; i++) {
+            try {
+                getPackageManager().getPackageInfo(TUBE_PKGS[i], 0);
+                return i;
+            } catch (Exception ignored) { }
+        }
+        return -1;
+    }
 
     private boolean tubePluginInstalled() {
-        try {
-            getPackageManager().getPackageInfo(PLUGIN_PKG, 0);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return tubeApp() >= 0;
     }
 
     /** ইউটিউব পেজে ডাউনলোড চাপলে: ব্রাউজারের ভেতরেই পপআপ, অ্যাপ বদলাতে হয় না */
@@ -2326,13 +2336,16 @@ public class MainActivity extends Activity {
 
     private void launchTubePlugin(String url) {
         if (url == null) return;
-        Intent i = new Intent(PLUGIN_ACTION);
-        i.setPackage(PLUGIN_PKG);
+        int which = tubeApp();
+        if (which < 0) which = 0;
+        Intent i = new Intent(TUBE_ACTIONS[which]);
+        i.setPackage(TUBE_PKGS[which]);
         i.putExtra("url", url);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(i);
         } catch (Exception e) {
-            toast(Lang.t("হেল্পার অ্যাপ খোলা যায়নি"));
+            toast(Lang.t("Tube অ্যাপ খোলা যায়নি"));
         }
     }
 
