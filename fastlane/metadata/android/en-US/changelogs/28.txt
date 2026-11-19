@@ -1,0 +1,6 @@
+New
+- Translate any page with Google Translate. With auto translate on, pages in
+  any language other than English are translated as soon as they open.
+- With auto translate off, a small Translate button appears on foreign pages.
+- Pick the language to translate into from the full Google Translate list,
+  from the menu or from Settings, and tap Original to go back.

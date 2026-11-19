@@ -33,7 +33,7 @@ public class SettingsActivity extends Activity {
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
     private int cOnAccent, cOnAccentSoft, cAccent2;
-    private static final String VERSION = "1.2.5";
+    private static final String VERSION = "1.2.6";
     private LinearLayout list;
 
     @Override
@@ -213,10 +213,14 @@ public class SettingsActivity extends Activity {
                 Lang.t("ব্রাউজার চালু হলে আগের ট্যাব ফিরে আসে"),
                 prefs.getBoolean("restore", true), "restore"));
 
-        list.addView(section(Lang.t("এআই")));
-        list.addView(switchRow("translate", Lang.t("বাংলায় অনুবাদ"),
-                Lang.t("ইংরেজি পেজ নিজে থেকেই বাংলায়"),
-                prefs.getBoolean("autotranslate", false), "autotranslate"));
+        list.addView(section(Lang.t("অনুবাদ")));
+        list.addView(switchRow("translate", Lang.t("অটো অনুবাদ"),
+                Lang.t("ইংরেজি ছাড়া অন্য ভাষার পেজ নিজে থেকেই অনুবাদ হয়"),
+                prefs.getBoolean("autotranslate", true), "autotranslate"));
+        list.addView(row("public", Lang.t("অনুবাদের ভাষা"),
+                Langs.name(prefs.getString("translang", "bn"), Lang.isEn()), new Runnable() {
+                    public void run() { pickTranslateLang(); }
+                }));
 
         list.addView(section(Lang.t("ডেটা")));
         list.addView(row("history", Lang.t("ইতিহাস মুছুন"), null, new Runnable() {
@@ -453,6 +457,18 @@ public class SettingsActivity extends Activity {
     }
 
     // ---------------------------------------------------------------- pickers
+
+    /** অনুবাদের লক্ষ্য ভাষা — Google Translate-এর সব ভাষা */
+    private void pickTranslateLang() {
+        Langs.pick(this, new AlertDialog.Builder(this, dialogTheme()),
+                Lang.t("অনুবাদের ভাষা"), Lang.isEn(),
+                prefs.getString("translang", "bn"), new Langs.Pick() {
+                    public void onPick(String code) {
+                        prefs.edit().putString("translang", code).apply();
+                        recreate();
+                    }
+                });
+    }
 
     private void pickLanguage() {
         final String[] names = {Lang.t("বাংলা"), Lang.t("ইংরেজি")};

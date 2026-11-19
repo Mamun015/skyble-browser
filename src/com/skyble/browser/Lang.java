@@ -168,6 +168,20 @@ public class Lang {
         EN.put("Skyble Browser এখনই ডিফল্ট ব্রাউজার", "Skyble Browser is already the default browser");
         EN.put("বাংলানিউজ", "Banglanews24");
         EN.put("বাংলায় অনুবাদ", "Translate to Bengali");
+        EN.put("অটো অনুবাদ", "Auto translate");
+        EN.put("ইংরেজি ছাড়া অন্য ভাষার পেজ নিজে থেকেই অনুবাদ হয়",
+                "Pages in any language other than English are translated by themselves");
+        EN.put("অনুবাদের ভাষা", "Translate to");
+        EN.put("ভাষা খুঁজুন", "Search a language");
+        EN.put("বন্ধ", "Close");
+        EN.put("এই পেজ অনুবাদ", "Translate this page");
+        EN.put("এই পেজ অনুবাদ করুন", "Translate this page");
+        EN.put("অন্য ভাষায় অনুবাদ…", "Translate to another language…");
+        EN.put("মূল পেজ দেখাও", "Show original page");
+        EN.put("মূল পেজ ফিরে এসেছে", "Original page is back");
+        EN.put("অনুবাদ হচ্ছে: ", "Translating to ");
+        EN.put("অনুবাদ করতে জাভাস্ক্রিপ্ট চালু করো", "Turn on JavaScript to translate");
+        EN.put("আগে কোনো পেজ খুলুন", "Open a page first");
         EN.put("বাতিল", "Cancel");
         EN.put("বিডিনিউজ২৪", "bdnews24");
         EN.put("ব্রাউজারে খুলুন", "Open in browser");

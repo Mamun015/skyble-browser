@@ -50,6 +50,10 @@ with the phone and the app stays under one megabyte.
 - Checks GitHub for a newer build every time it opens and once an hour while it
   stays open, and the browser's own update goes straight from download to the
   install screen
+- Translate pages with Google Translate. With auto translate on, pages in
+  any language other than English are translated as soon as they open, and with
+  auto translate off a Translate button appears on foreign pages. All Google
+  Translate languages are supported.
 - Find in page, print, share, copy link
 - Desktop site mode
 - Set Skyble as the default browser with one tap

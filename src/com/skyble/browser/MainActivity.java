@@ -57,8 +57,10 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.2.5";
+    private static final String VERSION = "1.2.6";
     private boolean autoTranslate = true;
+    /** কোন ভাষায় অনুবাদ হবে (Google কোড, ডিফল্ট বাংলা) */
+    private String transLang = "bn";
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
@@ -226,7 +228,8 @@ public class MainActivity extends Activity {
         desktopMode = prefs.getBoolean("desktop", false);
         forceDark = T_FORCE.equals(themeKey());
         darkPages = prefs.getBoolean("darkpages", true);
-        autoTranslate = prefs.getBoolean("autotranslate", false);
+        autoTranslate = prefs.getBoolean("autotranslate", true);
+        transLang = prefs.getString("translang", "bn");
         pickColors();
         syncYouTubeTheme();
 
@@ -344,9 +347,11 @@ public class MainActivity extends Activity {
             desktopMode = desk;
             if (current != null) current.reload();
         }
-        boolean tr = prefs.getBoolean("autotranslate", false);
-        if (tr != autoTranslate) {
+        boolean tr = prefs.getBoolean("autotranslate", true);
+        String tl = prefs.getString("translang", "bn");
+        if (tr != autoTranslate || !tl.equals(transLang)) {
             autoTranslate = tr;
+            transLang = tl;
             if (current != null) current.reload();
         }
         boolean dp = prefs.getBoolean("darkpages", true);
@@ -1341,6 +1346,10 @@ public class MainActivity extends Activity {
         list.addView(menuRow("download", Lang.t("মিডিয়া ডাউনলোড"), null, new Runnable() {
             public void run() { downloadMedia(); }
         }));
+        list.addView(menuRow("public", Lang.t("অনুবাদ"),
+                Langs.name(transLang, Lang.isEn()), new Runnable() {
+                    public void run() { showTranslateDialog(); }
+                }));
         list.addView(menuRow("refresh", Lang.t("রিলোড"), null, new Runnable() {
             public void run() { if (current != null) current.reload(); }
         }));
@@ -3136,7 +3145,8 @@ public class MainActivity extends Activity {
                     injectRecent(view);
                 }
                 if (isRealPage(url)) {
-                    if (autoTranslate) injectTranslate(view);
+                    // প্রাইভেট ট্যাবে নিজে থেকে অনুবাদ নয় — পেজের লেখা বাইরে যায় না
+                    injectTranslate(view, autoTranslate && (t == null || !t.incognito));
                     if (darkMode) injectDark(view);
                 }
             }
@@ -3987,14 +3997,71 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void injectJs(WebView view, String name) {
+    /** অনুবাদের ভাষা আর অটো/অফার মোড পেজে পাঠায় */
+    private void injectTranslate(WebView view, boolean auto) {
         if (!prefs.getBoolean("js", true)) return;
-        String js = asset(name);
-        if (js != null) view.evaluateJavascript(js, null);
+        String js = asset("translate.js");
+        if (js == null) return;
+        view.evaluateJavascript(trConfig(auto) + js, null);
     }
 
-    private void injectTranslate(WebView view) {
-        injectJs(view, "translate.js");
+    private String trConfig(boolean auto) {
+        return "window.__bbTrCfg={tl:" + JSONObject.quote(transLang)
+                + ",name:" + JSONObject.quote(Langs.name(transLang, Lang.isEn()))
+                + ",auto:" + (auto ? "1" : "0") + "};";
+    }
+
+    /** মেনু থেকে ডাকলে এই পেজটা এখনই অনুবাদ হয় */
+    private void translateNow() {
+        if (current == null || !isRealPage(current.getUrl())) {
+            toast(Lang.t("আগে কোনো পেজ খুলুন"));
+            return;
+        }
+        if (!prefs.getBoolean("js", true)) {
+            toast(Lang.t("অনুবাদ করতে জাভাস্ক্রিপ্ট চালু করো"));
+            return;
+        }
+        String js = asset("translate.js");
+        if (js == null) return;
+        // আগের অনুবাদ থাকলে আগে মূল লেখা ফিরিয়ে আনি, নইলে নতুন ভাষায় হয় না
+        current.evaluateJavascript("if(window.__bbOriginal)window.__bbOriginal();", null);
+        current.evaluateJavascript(trConfig(false) + js
+                + ";if(window.__bbTranslateNow)window.__bbTranslateNow();", null);
+        toast(Lang.t("অনুবাদ হচ্ছে: ") + Langs.name(transLang, Lang.isEn()));
+    }
+
+    private void showOriginal() {
+        if (current == null) return;
+        current.evaluateJavascript("if(window.__bbOriginal)window.__bbOriginal();", null);
+        toast(Lang.t("মূল পেজ ফিরে এসেছে"));
+    }
+
+    /** ভাষা বেছে নিলে সেভ হয়, চাইলে সেই ভাষাতেই পেজ অনুবাদ হয় */
+    private void pickTransLang(final boolean translateAfter) {
+        Langs.pick(this, dialog(), Lang.t("অনুবাদের ভাষা"), Lang.isEn(), transLang,
+                new Langs.Pick() {
+                    public void onPick(String code) {
+                        transLang = code;
+                        prefs.edit().putString("translang", code).apply();
+                        if (translateAfter) translateNow();
+                    }
+                });
+    }
+
+    private void showTranslateDialog() {
+        final String nm = Langs.name(transLang, Lang.isEn());
+        String[] items = {
+                Lang.t("এই পেজ অনুবাদ করুন") + " (" + nm + ")",
+                Lang.t("অন্য ভাষায় অনুবাদ…"),
+                Lang.t("মূল পেজ দেখাও")
+        };
+        dialog().setTitle(Lang.t("অনুবাদ"))
+                .setItems(items, (d, which) -> {
+                    if (which == 0) translateNow();
+                    else if (which == 1) pickTransLang(true);
+                    else showOriginal();
+                })
+                .show();
     }
 
     /** ইউটিউবের নিজের ডার্ক/লাইট থিম ঠিক হয় তার PREF কুকি থেকে।
