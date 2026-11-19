@@ -10,10 +10,12 @@
 **Website: [mamun015.github.io/skyble-browser](https://mamun015.github.io/skyble-browser/)**
 
 A fast, light web browser for Android with a downloader built in. Small
-download, quick start, no ads, no tracking, no account. YouTube videos save at up
-to 1080p as ordinary MP4 files, and media from other sites lands in the same
-download list. Built on the Android System WebView so the engine stays current
-with the phone and the app stays under one megabyte.
+download, quick start, no ads, no tracking, no account. Pages translate
+themselves as they open, and on Android 12+ the palette comes from your
+wallpaper. YouTube videos save at up to 1080p as ordinary MP4 files, and media
+from other sites lands in the same download list. Built on the Android System
+WebView so the engine stays current with the phone and the app stays under one
+megabyte.
 
 ## Screenshots
 
@@ -41,6 +43,15 @@ with the phone and the app stays under one megabyte.
 - Optional GPL helper app (`plugin/`) with NewPipeExtractor for the rare video
   the built-in resolver cannot read
 
+**Translate**
+- Automatic page translation with Google Translate, on by default: every page
+  that is not in English is translated as soon as it opens, with a progress
+  counter and a button that brings the original back
+- Turn auto translate off and a "translate this page" pill appears on foreign
+  pages instead
+- A searchable picker with every Google Translate language, so the target
+  language is one tap away
+
 **Browsing**
 - Up to 50 tabs, with a session that comes back after a restart
 - Live search suggestions, plus suggestions from your own history and bookmarks
@@ -50,10 +61,6 @@ with the phone and the app stays under one megabyte.
 - Checks GitHub for a newer build every time it opens and once an hour while it
   stays open, and the browser's own update goes straight from download to the
   install screen
-- Translate pages with Google Translate. With auto translate on, pages in
-  any language other than English are translated as soon as they open, and with
-  auto translate off a Translate button appears on foreign pages. All Google
-  Translate languages are supported.
 - Find in page, print, share, copy link
 - Desktop site mode
 - Set Skyble as the default browser with one tap
@@ -66,6 +73,7 @@ with the phone and the app stays under one megabyte.
 
 **Reading**
 - Four themes: follow system, always light, always dark, force every page dark
+- On Android 12+, the palette follows your phone's Material You wallpaper colors
 - Pages with their own dark theme keep it
 - Text size from 85% to 130%
 - Toggles for images and JavaScript
@@ -75,7 +83,9 @@ with the phone and the app stays under one megabyte.
 - Full Bengali interface, switchable in Settings
 
 **AI**
-- Translate English pages to Bengali from the Settings screen, off by default
+- Page translation is powered by Google Translate. The page text goes to
+  translate.googleapis.com, with no key and no account; text leaves the phone
+  only when a page is translated
 
 **Updates**
 - In-app check against GitHub releases; the app tells you when a newer build exists
