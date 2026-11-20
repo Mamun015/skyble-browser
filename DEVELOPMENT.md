@@ -15,9 +15,18 @@ JAVA_HOME=/path/to/jdk-17 PATH=$JAVA_HOME/bin:$PATH bash build.sh
   `platforms/android-*/android.jar` and `build-tools/*/lib/d8.jar`.
 - Unsigned build (F-Droid): `ANDROID_HOME=/path/to/sdk UNSIGNED=1 bash build.sh`
   → `build/aligned.apk`.
-- `build.sh` auto-creates `keystore.jks` (password `bangla123`) **if it is
-  missing**. That key is NOT in the repo. Always build releases with the
-  original key, otherwise existing installs cannot update.
+- Release builds are signed by `sign.sh` from key material kept outside the
+  repository. Point `SKYBLE_SIGNING_DIR` at that directory (default
+  `$HOME/Keystores/skyble`); it holds the current key, the previous key and the
+  rotation lineage. Both keys are required: Android 5–8 verifies the v1/v2
+  signature (previous key), Android 9+ verifies the v3 signature and its
+  lineage (current key).
+- Signing settings come from `SKYBLE_LEGACY_KS`, `SKYBLE_LEGACY_PASS`,
+  `SKYBLE_LEGACY_ALIAS`, `SKYBLE_CURRENT_KS`, `SKYBLE_CURRENT_PASS`,
+  `SKYBLE_CURRENT_ALIAS` and `SKYBLE_LINEAGE`, or from `keystore.properties` /
+  `skyble-release.properties` in that directory.
+- Never commit key material, and never publish an APK signed outside the chain:
+  existing installs reject a different signature.
 
 ## Layout
 

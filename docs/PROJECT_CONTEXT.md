@@ -33,24 +33,31 @@ No Gradle. `build.sh` runs the plain SDK toolchain:
 2. `javac` all sources (Java 11, `-source 11 -target 11`)
 3. D8/R8 dexing (`sdk/r8.jar`, min API 21)
 4. `zipalign`
-5. `apksigner` with `keystore.jks` (unless `UNSIGNED=1`)
+5. `sign.sh` with the release key chain (unless `UNSIGNED=1`)
 6. `apksigner verify`
 
-Inputs that are **not in git**: `sdk/android.jar`, `sdk/r8.jar`, `keystore.jks`
-(all gitignored). Build machine needs JDK 17 + Android build-tools.
+Inputs that are **not in git**: `sdk/android.jar`, `sdk/r8.jar` and the signing
+material (all gitignored). Build machine needs JDK 17 + Android build-tools.
 
-> **Critical:** the release APK signing key exists only in `keystore.jks` outside
-> the repo. If the old machine's copy is lost, new builds get a different
-> signature and cannot install over released versions. Recover that file from a
-> backup if at all possible; it can be verified against the certificate inside
-> any released APK.
+Signing uses a two-key chain kept outside the repository, pointed at by
+`SKYBLE_SIGNING_DIR`:
 
-Release certificate of v1.2.6 (verify a recovered key against this):
+| file | role |
+| --- | --- |
+| `keystore.jks` | previous release key — v1/v2 signatures, Android 5–8 |
+| `skyble-release.jks` | current release key — v3 signature, Android 9+ |
+| `lineage.bin` | rotation proof linking the previous key to the current one |
+
+Both keys are needed on every build. An APK signed with only one of them either
+skips old devices or breaks updates on new ones.
+
+Certificates currently in the chain:
 
 ```
-subject : C=BD, O=Mobile, CN=Bangla Browser
-SHA-256 : 80:4B:A5:81:D3:D0:8A:82:90:4B:B0:E5:DE:F7:25:F7:DE:B2:9B:E3:D2:BB:07:4C:1D:2D:E1:EF:B1:1F:FD:34
-valid   : 2026-11-11 → 2054-03-29
+legacy : C=BD, O=Mobile, CN=Bangla Browser
+         SHA-256 80:4B:A5:81:D3:D0:8A:82:90:4B:B0:E5:DE:F7:25:F7:DE:B2:9B:E3:D2:BB:07:4C:1D:2D:E1:EF:B1:1F:FD:34
+current: C=BD, O=Mobile, CN=Skyble
+         SHA-256 F3:B5:A5:05:26:C5:58:04:66:75:D3:0B:72:76:EA:45:70:D6:A1:1A:56:D3:CB:29:22:25:4F:2C:7B:14:EF:8D
 ```
 
 ## Source map
@@ -105,7 +112,8 @@ downloads the APK, and hands it to the installer through `ApkProvider`.
 
 ## State / open items
 
-- [ ] Recover or confirm the original `keystore.jks` (update compatibility).
+- [x] Recover the original `keystore.jks` (update compatibility).
+- [x] Move release builds to a two-key chain with a rotation lineage.
 - [ ] Keep `sdk/android.jar` + `sdk/r8.jar` available on the new machine.
 - [ ] F-Droid metadata is stale (1.0.1/versionCode 6).
 - [ ] `Updater` User-Agent string still says `BanglaBrowser/`.

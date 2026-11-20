@@ -9,8 +9,8 @@ from any app by sharing a link. Standalone too: it has its own launcher icon.
 ./plugin/build.sh
 ```
 
-No Gradle. Uses the same toolchain and signing key as the browser
-(`../sdk/android.jar`, `../sdk/r8.jar`, `../keystore.jks`, alias `bangla`).
+No Gradle. Uses the same toolchain and signing chain as the browser
+(`../sdk/android.jar`, `../sdk/r8.jar`, `../sign.sh`).
 Output: `plugin/SkybleTubePlugin-1.0.apk`.
 
 The YouTube resolver is NewPipeExtractor (v0.24.6, ANDROID InnerTube client) from
