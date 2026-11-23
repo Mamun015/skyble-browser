@@ -9,6 +9,8 @@
 
 **Website: [mamun015.github.io/skyble-browser](https://mamun015.github.io/skyble-browser/)**
 
+**Download the latest APK: [SkybleBrowser-1.2.6.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.2.6, Android 5.0+, under 1 MB)
+
 A fast, light web browser for Android with a downloader built in. Small
 download, quick start, no ads, no tracking, no account. Pages translate
 themselves as they open, and on Android 12+ the palette comes from your
