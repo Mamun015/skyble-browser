@@ -9,6 +9,8 @@
 
 **Website: [mamun015.github.io/skyble-browser](https://mamun015.github.io/skyble-browser/)**
 
+**Download page with checksum and install steps: [download](https://mamun015.github.io/skyble-browser/download.html)** · [বাংলা](https://mamun015.github.io/skyble-browser/bn.html)
+
 **Download the latest APK: [SkybleBrowser-1.2.6.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.2.6, Android 5.0+, under 1 MB)
 
 A fast, light web browser for Android with a downloader built in. Small
