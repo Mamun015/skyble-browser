@@ -1,0 +1,16 @@
+{
+  "name": "Skyble Browser",
+  "short_name": "Skyble",
+  "description": "A fast, light Android browser with a built-in YouTube and media downloader.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0140ca",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

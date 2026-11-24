@@ -7,3 +7,6 @@ keystore.jks
 *.idsig
 *.apk.idsig
 plugin/build/
+# Key material — never commit
+*.properties
+lineage.bin

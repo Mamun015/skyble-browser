@@ -28,9 +28,11 @@
 <meta name="twitter:description" content="Free and open source. Under 1 MB. YouTube 1080p downloads, media from other sites, tabs, ad blocking, dark mode.">
 <meta name="twitter:image" content="https://mamun015.github.io/skyble-browser/og.png">
 
-<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="icon" href="favicon.ico" sizes="48x48 96x96">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
 <meta name="application-name" content="Skyble Browser">
 <meta name="apple-mobile-web-app-title" content="Skyble Browser">
 <link rel="sitemap" type="application/xml" href="sitemap.xml">
@@ -76,7 +78,7 @@
   "applicationSubCategory": "Web browser",
   "operatingSystem": "Android 5.0 and newer",
   "softwareVersion": "1.2.6",
-  "fileSize": "604KB",
+  "fileSize": "608KB",
   "inLanguage": ["en", "bn"],
   "description": "A small, fast web browser for Android with tabs, an ad and tracker host blocker, dark mode, English or Bengali interface, Material You theming on Android 12+, automatic page translation, and a built-in downloader that saves YouTube video at 1080p and 720p as MP4 plus video, audio and files from other sites. Built on the Android System WebView, so the app stays under one megabyte.",
   "featureList": ["YouTube video download in 1080p and 720p", "Media downloads from other sites", "Up to 50 tabs", "Ad and tracker host blocking", "Dark mode", "English and Bengali interface", "Material You theming on Android 12+", "Automatic page translation"],
@@ -104,7 +106,7 @@
     { "@type": "Question", "name": "Is Skyble Browser free?",
       "acceptedAnswer": { "@type": "Answer", "text": "Yes. The app is free to download and use, with no ads, no subscription and no account. The source code is published under the Mozilla Public License 2.0." } },
     { "@type": "Question", "name": "How big is the app?",
-      "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 580 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
+      "acceptedAnswer": { "@type": "Answer", "text": "The APK is about 608 KB. Skyble does not ship a browser engine; pages are rendered by the Android System WebView that is already installed on the phone, so the app stays tiny and inherits engine security updates." } },
     { "@type": "Question", "name": "Does it block ads?",
       "acceptedAnswer": { "@type": "Answer", "text": "It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone." } },
     { "@type": "Question", "name": "Can I use it in Bengali?",
@@ -212,6 +214,7 @@ footer a{color:var(--muted)}
       <a href="#features">Features</a>
       <a href="#install">Install</a>
       <a href="#faq">FAQ</a>
+      <a href="download.html">Get the APK</a>
       <a href="https://github.com/Mamun015/skyble-browser">GitHub</a>
     </nav>
   </div>
@@ -221,7 +224,7 @@ footer a{color:var(--muted)}
   <div class="wrap">
     <div>
       <span class="tag">Free · Open source · Android</span>
-      <h1>A fast, light browser for Android that also downloads video</h1>
+      <h1>Skyble Browser: a fast, light Android browser that also downloads video</h1>
       <p class="lead">Skyble Browser is a small web browser with real tabs, ad and tracker
         blocking, dark mode and both English and Bengali. Every page is translated as it
         opens when auto translate is on. A downloader is built in: on a
@@ -229,11 +232,12 @@ footer a{color:var(--muted)}
         picks up video, audio and files. No ads, no tracking, no account, and the whole app is
         under one megabyte.</p>
       <div class="btns">
-        <a class="btn primary" href="https://github.com/Mamun015/skyble-browser/releases/latest">Download the APK</a>
+        <a class="btn primary" href="download.html">Download the APK</a>
         <a class="btn ghost" href="https://github.com/Mamun015/skyble-browser">Source code</a>
       </div>
+      <p class="meta" style="margin:14px 0 0;font-size:14px;color:#9dc0f5">Version 1.2.6 · 608 KB · released 19 November 2026 · <a href="download.html" style="color:#dbe8ff">all download details</a></p>
       <div class="facts">
-        <span>Android 5.0+</span><span>~580 KB</span><span>MPL-2.0</span><span>YouTube 1080p</span><span>No ads · No trackers</span>
+        <span>Android 5.0+</span><span>608 KB</span><span>MPL-2.0</span><span>YouTube 1080p</span><span>No ads · No trackers</span>
       </div>
     </div>
     <img class="appicon" src="icon.png" alt="Skyble Browser app icon" width="200" height="200">
@@ -354,14 +358,22 @@ footer a{color:var(--muted)}
   </div>
 </section>
 
-<section id="fdroid">
+<section id="official">
   <div class="wrap">
-    <h2>F-Droid</h2>
-    <p class="sub">Skyble is submitted to F-Droid and is in review. F-Droid compiles the app from
-      source on its own builders and signs it with its own key, so the F-Droid build will be a
-      separate install from the APK above.</p>
-    <p class="sub">Once the listing is live, this page will link to it. Until then, the release
-      page is the only official download.</p>
+    <h2>Where to get the official build</h2>
+    <p class="sub">Every release is published on GitHub with the APK attached, and the same file is
+      linked from the <a href="download.html">download page</a> on this site.</p>
+    <div class="grid">
+      <div class="card"><div class="k">Source</div><h3>GitHub Releases</h3>
+        <p>The release page lists every version with its APK, release notes and date. The newest
+          build sits at the top.</p></div>
+      <div class="card"><div class="k">Check</div><h3>Version and SHA-256</h3>
+        <p>The download page shows the exact version, file size and SHA-256 of the current APK,
+          so you can confirm a copy is unchanged.</p></div>
+      <div class="card"><div class="k">Copies</div><h3>Other download sites</h3>
+        <p>APK sites copy the release and sometimes keep an old build. The version in the file
+          name tells you which one you have.</p></div>
+    </div>
   </div>
 </section>
 
@@ -389,7 +401,7 @@ footer a{color:var(--muted)}
     <details><summary>Is Skyble Browser free?</summary>
       <p>Yes. No ads, no subscription, no account. The source code is published under the Mozilla Public License 2.0.</p></details>
     <details><summary>How big is the app?</summary>
-      <p>About 580 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
+      <p>About 608 KB. There is no bundled browser engine; pages are drawn by the Android System WebView already installed on the phone.</p></details>
     <details><summary>Does it block ads?</summary>
       <p>It blocks requests to known advertising and tracking hosts such as doubleclick, googleadservices, taboola, outbrain and adsterra. The list is updated with the app, and blocking happens before the request leaves the phone.</p></details>
     <details><summary>Can I use it in Bengali?</summary>
