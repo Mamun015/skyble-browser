@@ -5,21 +5,21 @@
 [![License: MPL-2.0](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%205.0%2B-3DDC84.svg)](https://developer.android.com)
 [![Latest release](https://img.shields.io/github/v/release/Mamun015/skyble-browser)](https://github.com/Mamun015/skyble-browser/releases)
-[![APK size](https://img.shields.io/badge/APK-under%201%20MB-blueviolet.svg)](https://github.com/Mamun015/skyble-browser/releases)
+[![APK size](https://img.shields.io/badge/APK-2.9%20MB-blueviolet.svg)](https://github.com/Mamun015/skyble-browser/releases)
 
 **Website: [mamun015.github.io/skyble-browser](https://mamun015.github.io/skyble-browser/)**
 
 **Download page with checksum and install steps: [download](https://mamun015.github.io/skyble-browser/download.html)** · [বাংলা](https://mamun015.github.io/skyble-browser/bn.html)
 
-**Download the latest APK: [SkybleBrowser-1.2.6.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.2.6, Android 5.0+, under 1 MB)
+**Download the latest APK: [SkybleBrowser-1.3.0.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.3.0, Android 5.0+, about 3 MB)
 
-A fast, light web browser for Android with a downloader built in. Small
-download, quick start, no ads, no tracking, no account. Pages translate
-themselves as they open, and on Android 12+ the palette comes from your
-wallpaper. YouTube videos save at up to 1080p as ordinary MP4 files, and media
-from other sites lands in the same download list. Built on the Android System
-WebView so the engine stays current with the phone and the app stays under one
-megabyte.
+A fast, light web browser for Android with a downloader and a video player built
+in. No ads, no tracking, no account. Pages translate themselves as they open,
+and on Android 12+ the palette comes from your wallpaper. Videos from websites
+and from your download list play in the app's own player, YouTube videos save at
+up to 1080p as ordinary MP4 files, and media from other sites lands in the same
+download list. Pages are drawn by the Android System WebView so the engine stays
+current with the phone.
 
 ## Screenshots
 
@@ -47,6 +47,20 @@ megabyte.
 - Optional GPL helper app (`plugin/`) with NewPipeExtractor for the rare video
   the built-in resolver cannot read
 
+**Video player**
+- Videos from websites open in the app's own player instead of the page: MP4,
+  WebM, MKV, MOV, MP3, M4A, HLS (`.m3u8`) and DASH (`.mpd`)
+- Videos you downloaded open in the same player when you tap them in the
+  download list
+- Swipe up or down on the left half for brightness, on the right half for
+  volume, and sideways to seek
+- Fit, Fill and Stretch aspect ratios; 0.5x to 2x speed; audio track picker for
+  videos with more than one language; mute
+- Hardware or software decoding, switchable while a video plays, so a video that
+  stalls on your chipset still plays
+- Media the page hides behind `blob:` gets played too: the app watches the
+  network requests the page makes and hands the real stream to the player
+
 **Translate**
 - Automatic page translation with Google Translate, on by default: every page
   that is not in English is translated as soon as it opens, with a progress
@@ -66,6 +80,11 @@ megabyte.
   stays open, and the browser's own update goes straight from download to the
   install screen
 - Find in page, print, share, copy link
+- Press and hold a link for the menu: copy link, copy link text, share, open in
+  a new tab, download, add to home, or play in the player when the link is a
+  video file
+- Links open in a new tab by default, so ads and popups cannot take over the tab
+  you are reading
 - Desktop site mode
 - Set Skyble as the default browser with one tap
 
@@ -123,16 +142,21 @@ and verifies the APK.
 
 Skyble does not ship a browser engine. Pages are rendered by the Android System
 WebView installed on the phone, which is maintained through Play Store updates.
-The result is a sub-megabyte app that inherits engine security fixes without
-shipping a second copy of Chromium.
+The result is a small app that inherits engine security fixes without shipping a
+second copy of Chromium.
+
+The video player is ExoPlayer (AndroidX Media3, Apache-2.0). It adds about 2 MB
+of code and nothing else in the app got heavier.
 
 ## Project layout
 
 ```
-src/com/skyble/browser/   Java sources (single activity browser, settings, updater)
+src/com/skyble/browser/   Java sources (browser, settings, player, updater)
 assets/home.html          start page
 assets/dark.js            dark mode for web pages
 assets/translate.js       page translation
+assets/player.js          hands page videos to the in-app player
+libs/                     Media3 / ExoPlayer jars for the player
 docs/                      project website (GitHub Pages)
 plugin/                   optional helper app with NewPipeExtractor (GPL-3.0)
 fastlane/                 store listing: text, icon, screenshots
@@ -143,8 +167,8 @@ build.sh                  build script
 
 ## Roadmap
 
-- Built-in video player
 - Stronger ad filtering with a maintained filter list
+- Subtitles and playlist play in the video player
 
 ## License
 

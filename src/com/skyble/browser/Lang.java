@@ -31,7 +31,7 @@ public class Lang {
         EN.put("আপডেট চেক করা যায়নি", "Could not check for updates");
         EN.put("আরও বড় (১৩০%)", "Larger (130%)");
         EN.put("ইংরেজি", "English");
-        EN.put("ইংরেজি পেজ নিজে থেকেই বাংলায়", "English pages become Bengali automatically");
+        EN.put("ইংরেজি পেজ নিজে থেকেই বাংলায়", "Pages in other languages are translated automatically");
         EN.put("ইউটিউব", "YouTube");
         EN.put("ইতিহাস", "History");
         EN.put("ইতিহাস (", "History (");
@@ -170,7 +170,7 @@ public class Lang {
         EN.put("বাংলায় অনুবাদ", "Translate to Bengali");
         EN.put("অটো অনুবাদ", "Auto translate");
         EN.put("ইংরেজি ছাড়া অন্য ভাষার পেজ নিজে থেকেই অনুবাদ হয়",
-                "Pages in any language other than English are translated by themselves");
+                "Pages in other languages are translated automatically");
         EN.put("অনুবাদের ভাষা", "Translate to");
         EN.put("ভাষা খুঁজুন", "Search a language");
         EN.put("বন্ধ", "Close");
@@ -289,6 +289,25 @@ public class Lang {
         EN.put("স্ট্রিম", "Stream");
         EN.put("ফাইল", "File");
         EN.put("মিডিয়া", "Media");
+        EN.put("এই ভিডিওটা চালানো যাচ্ছে না", "This video cannot be played here");
+        EN.put("অটো", "Auto");
+        EN.put("গতি", "Speed");
+        EN.put("ফিট", "Fit");
+        EN.put("ভরাট", "Fill");
+        EN.put("টান", "Stretch");
+        EN.put("মিউট", "Muted");
+        EN.put("আওয়াজ চালু", "Sound on");
+        EN.put("অডিও ট্র্যাক", "Audio track");
+        EN.put("অডিও ট্র্যাক নেই", "No audio track");
+        EN.put("চলবে না", "unsupported");
+        EN.put("সফটওয়্যার ডিকোডার", "Software decoder");
+        EN.put("হার্ডওয়্যার ডিকোডার", "Hardware decoder");
+        EN.put("প্লেয়ারে চালান", "Play in player");
+        EN.put("এই পেজে ভিডিও পাওয়া যায়নি", "No video found on this page");
+        EN.put("ভিডিও বাছুন", "Choose a video");
+        EN.put("লিংকের লেখা", "Link text");
+        EN.put("লিংকের লেখা কপি", "Copy link text");
+        EN.put("লিংকের লেখা কপি হয়েছে", "Link text copied");
     }
 
     public static void init(SharedPreferences p) {

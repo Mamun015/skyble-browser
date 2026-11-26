@@ -205,7 +205,7 @@ public class SettingsActivity extends Activity {
         list.addView(section(Lang.t("ব্রাউজিং")));
         list.addView(switchRow("code", Lang.t("জাভাস্ক্রিপ্ট"), prefs.getBoolean("js", true), "js"));
         list.addView(switchRow("image", Lang.t("ছবি লোড"), prefs.getBoolean("images", true), "images"));
-        list.addView(switchRow("tab", Lang.t("লিংক নতুন ট্যাবে"), prefs.getBoolean("newtab", false), "newtab"));
+        list.addView(switchRow("tab", Lang.t("লিংক নতুন ট্যাবে"), prefs.getBoolean("newtab", true), "newtab"));
         list.addView(switchRow("public", Lang.t("বিজ্ঞাপন ও ট্র্যাকার ব্লক"),
                 Lang.t("জানা বিজ্ঞাপন সার্ভার আগেই আটকে দেয়"),
                 prefs.getBoolean("adblock", true), "adblock"));
@@ -218,7 +218,7 @@ public class SettingsActivity extends Activity {
                 Lang.t("ইংরেজি ছাড়া অন্য ভাষার পেজ নিজে থেকেই অনুবাদ হয়"),
                 prefs.getBoolean("autotranslate", true), "autotranslate"));
         list.addView(row("public", Lang.t("অনুবাদের ভাষা"),
-                Langs.name(prefs.getString("translang", "bn"), Lang.isEn()), new Runnable() {
+                Langs.name(prefs.getString("translang", "en"), Lang.isEn()), new Runnable() {
                     public void run() { pickTranslateLang(); }
                 }));
 
@@ -462,7 +462,7 @@ public class SettingsActivity extends Activity {
     private void pickTranslateLang() {
         Langs.pick(this, new AlertDialog.Builder(this, dialogTheme()),
                 Lang.t("অনুবাদের ভাষা"), Lang.isEn(),
-                prefs.getString("translang", "bn"), new Langs.Pick() {
+                prefs.getString("translang", "en"), new Langs.Pick() {
                     public void onPick(String code) {
                         prefs.edit().putString("translang", code).apply();
                         recreate();

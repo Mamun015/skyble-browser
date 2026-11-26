@@ -14,7 +14,7 @@ if [ ! -f "$R8" ] && [ -n "$ANDROID_HOME" ]; then
   R8="$(ls -d "$ANDROID_HOME"/build-tools/*/lib/d8.jar 2>/dev/null | sort -V | tail -1)"
 fi
 OUT="$PWD/build"
-NAME="SkybleBrowser-1.2.6.apk"
+NAME="SkybleBrowser-1.3.0.apk"
 
 # On the F-Droid build server the SDK tools are not on PATH by default.
 if ! command -v aapt >/dev/null 2>&1 && [ -n "$ANDROID_HOME" ]; then
@@ -37,12 +37,17 @@ aapt package -f -m \
 
 echo "==> 2/6 compile java"
 find src "$OUT/gen" -name '*.java' > "$OUT/sources.txt"
-javac -nowarn -source 11 -target 11 -classpath "$AJ" -d "$OUT/classes" @"$OUT/sources.txt" 2>&1 | grep -v "bootstrap class path" || true
+javac -nowarn -source 11 -target 11 -classpath "$AJ:libs/*" -d "$OUT/classes" @"$OUT/sources.txt" > "$OUT/javac.log" 2>&1
+if [ $? -ne 0 ]; then
+  grep -v "bootstrap class path" "$OUT/javac.log"
+  echo "!! compile failed"
+  exit 1
+fi
 
 echo "==> 3/6 dex"
 find "$OUT/classes" -name '*.class' > "$OUT/classes.txt"
 java -cp "$R8" com.android.tools.r8.D8 \
-  --min-api 21 --lib "$AJ" --output "$OUT/dex" @"$OUT/classes.txt" 2>&1 | grep -v "^Warning" || true
+  --min-api 21 --lib "$AJ" --output "$OUT/dex" libs/*.jar @"$OUT/classes.txt" 2>&1 | grep -v "^Warning" || true
 
 echo "==> 4/6 pack"
 cp "$OUT/base.apk" "$OUT/unsigned.apk"

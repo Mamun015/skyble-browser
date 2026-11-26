@@ -17,9 +17,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -60,7 +62,7 @@ public class MainActivity extends Activity {
     private static final String VERSION = "1.2.6";
     private boolean autoTranslate = true;
     /** কোন ভাষায় অনুবাদ হবে (Google কোড, ডিফল্ট বাংলা) */
-    private String transLang = "bn";
+    private String transLang = "en";
     private final java.util.HashMap<String, String> assetCache = new java.util.HashMap<String, String>();
     private static final String UA_DESKTOP =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
@@ -104,6 +106,16 @@ public class MainActivity extends Activity {
     private View overlay;
 
     private final List<Tab> tabs = new ArrayList<>();
+
+    /** প্রতি ট্যাবে পেজের ভেতরে যে মিডিয়া লিংকগুলো রিকোয়েস্ট হয়েছে (নতুন সবার শেষে) */
+    private final java.util.WeakHashMap<WebView, java.util.LinkedHashMap<String, Long>> sniffed =
+            new java.util.WeakHashMap<>();
+
+    private static final String[] MEDIA_EXT = {
+            ".mp4", ".m4v", ".webm", ".mkv", ".mov", ".3gp",
+            ".m3u8", ".mpd", ".mp3", ".m4a", ".aac", ".ogg", ".wav"
+    };
+
     private final Handler pillTick = new Handler(Looper.getMainLooper());
     private String pillUrl;
     /** ইউটিউব নিজের ভেতরে পেজ বদলায়, তখন onPageFinished আসে না — তাই ঠিকানা দেখতে হয় */
@@ -229,7 +241,7 @@ public class MainActivity extends Activity {
         forceDark = T_FORCE.equals(themeKey());
         darkPages = prefs.getBoolean("darkpages", true);
         autoTranslate = prefs.getBoolean("autotranslate", true);
-        transLang = prefs.getString("translang", "bn");
+        transLang = prefs.getString("translang", "en");
         pickColors();
         syncYouTubeTheme();
 
@@ -348,7 +360,7 @@ public class MainActivity extends Activity {
             if (current != null) current.reload();
         }
         boolean tr = prefs.getBoolean("autotranslate", true);
-        String tl = prefs.getString("translang", "bn");
+        String tl = prefs.getString("translang", "en");
         if (tr != autoTranslate || !tl.equals(transLang)) {
             autoTranslate = tr;
             transLang = tl;
@@ -1346,6 +1358,9 @@ public class MainActivity extends Activity {
         list.addView(menuRow("download", Lang.t("মিডিয়া ডাউনলোড"), null, new Runnable() {
             public void run() { downloadMedia(); }
         }));
+        list.addView(menuRow("play", Lang.t("প্লেয়ারে চালান"), null, new Runnable() {
+            public void run() { playInPlayer(); }
+        }));
         list.addView(menuRow("public", Lang.t("অনুবাদ"),
                 Langs.name(transLang, Lang.isEn()), new Runnable() {
                     public void run() { showTranslateDialog(); }
@@ -2020,9 +2035,16 @@ public class MainActivity extends Activity {
                     }
                     return;
                 }
+                // ভিডিও/অডিও হলে অ্যাপের নিজের প্লেয়ারে, নইলে অন্য অ্যাপে
+                if ((mime != null && (mime.startsWith("video/") || mime.startsWith("audio/")))
+                        || looksLikeMedia(name) || looksLikeMedia(uri)) {
+                    openPlayer(uri);
+                    return;
+                }
                 try {
                     Intent i = new Intent(Intent.ACTION_VIEW);
-                    i.setDataAndType(Uri.parse(uri), mime.length() == 0 ? "*/*" : mime);
+                    String type = (mime == null || mime.length() == 0) ? "*/*" : mime;
+                    i.setDataAndType(Uri.parse(uri), type);
                     i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     startActivity(i);
                 } catch (Exception e) {
@@ -2979,6 +3001,193 @@ public class MainActivity extends Activity {
         toast(Lang.t("সব ট্যাব বন্ধ হয়েছে"));
     }
 
+    // ---------------------------------------------------------------- long press menu
+
+    /** লিংক/ছবি/ভিডিওতে চেপে ধরলে নিজের মেনু — কপি, শেয়ার, নতুন ট্যাব, প্লেয়ার, ডাউনলোড */
+    private boolean pageLongPress(final WebView view, float x, float y) {
+        WebView.HitTestResult r = view.getHitTestResult();
+        final String hit = r == null ? null : r.getExtra();
+        int type = r == null ? 0 : r.getType();
+        boolean linkish = type == WebView.HitTestResult.SRC_ANCHOR_TYPE
+                || type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
+                || type == WebView.HitTestResult.ANCHOR_TYPE
+                || type == WebView.HitTestResult.IMAGE_TYPE
+                || (hit != null && hit.startsWith("http"));
+        if (!linkish) return false;   // সাধারণ লেখা: আগের মতোই টেক্সট সিলেকশন
+
+        float scale = view.getScale();
+        if (scale <= 0) scale = 1f;
+        String js = "(function(){try{"
+                + "var el=document.elementFromPoint(" + (x / scale) + "," + (y / scale) + ");"
+                + "if(!el)return '{\"h\":\"\",\"t\":\"\",\"v\":\"\"}';"
+                + "var a=el.closest?el.closest('a'):null;"
+                + "var m=el.closest?el.closest('video,audio'):null;"
+                + "return JSON.stringify({h:a?(a.href||''):'',"
+                + "t:a?String(a.innerText||a.title||'').replace(/\\s+/g,' ').trim().slice(0,120):'',"
+                + "v:m?(m.currentSrc||m.src||''):''});"
+                + "}catch(e){return '{\"h\":\"\",\"t\":\"\",\"v\":\"\"}'}})()";
+        view.evaluateJavascript(js, new ValueCallback<String>() {
+            public void onReceiveValue(String value) {
+                String href = "", text = "", vid = "";
+                try {
+                    String s = value;
+                    if (s != null && s.length() > 1 && s.charAt(0) == '"') {
+                        s = String.valueOf(new org.json.JSONTokener(s).nextValue());
+                    }
+                    JSONObject o = new JSONObject(s);
+                    href = o.optString("h", "");
+                    text = o.optString("t", "");
+                    vid = o.optString("v", "");
+                } catch (Exception ignored) { }
+                if (href.length() == 0 && hit != null && hit.startsWith("http")) href = hit;
+                if (vid.length() == 0 && hit != null && looksLikeMedia(hit)) vid = hit;
+                if (href.length() == 0 && vid.length() == 0) return;
+                showLinkSheet(href, text, vid);
+            }
+        });
+        return true;
+    }
+
+    private void showLinkSheet(final String link, final String text, final String video) {
+        hideSuggestions();
+        final FrameLayout box = new FrameLayout(this);
+        box.setBackgroundColor(0x52000000);
+        box.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { closeOverlay(); }
+        });
+
+        LinearLayout sheet = new LinearLayout(this);
+        sheet.setOrientation(LinearLayout.VERTICAL);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(cSurface);
+        float r = dp(26);
+        bg.setCornerRadii(new float[]{r, r, r, r, r, r, r, r});
+        sheet.setBackground(bg);
+        if (Build.VERSION.SDK_INT >= 21) sheet.setElevation(dp(20));
+        sheet.setPadding(dp(10), dp(6), dp(10), dp(14));
+        sheet.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { }
+        });
+
+        View grip = new View(this);
+        grip.setBackground(rounded(Theme.withAlpha(cMuted, 0x59), 2));
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(dp(38), dp(4));
+        glp.gravity = Gravity.CENTER_HORIZONTAL;
+        glp.topMargin = dp(8);
+        glp.bottomMargin = dp(6);
+        sheet.addView(grip, glp);
+
+        TextView head = new TextView(this);
+        head.setText(link != null && link.length() > 0 ? link : video);
+        head.setTextSize(12);
+        head.setTextColor(cMuted);
+        head.setMaxLines(2);
+        head.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+        head.setPadding(dp(14), dp(2), dp(14), dp(8));
+        sheet.addView(head);
+
+        LinearLayout list = new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+
+        if (video != null && video.length() > 0) {
+            list.addView(menuRow("play", Lang.t("প্লেয়ারে চালান"), null, new Runnable() {
+                public void run() { openPlayer(video); }
+            }));
+        }
+        if (link != null && link.length() > 0) {
+            list.addView(menuRow("link", Lang.t("লিংক কপি"), null, new Runnable() {
+                public void run() {
+                    copyText(Lang.t("লিংক"), link, Lang.t("লিংক কপি হয়েছে"));
+                }
+            }));
+        }
+        if (text != null && text.trim().length() > 0) {
+            final String t = text.trim();
+            list.addView(menuRow("code", Lang.t("লিংকের লেখা কপি"), null, new Runnable() {
+                public void run() {
+                    copyText(Lang.t("লিংকের লেখা"), t, Lang.t("লিংকের লেখা কপি হয়েছে"));
+                }
+            }));
+        }
+        if (link != null && link.length() > 0) {
+            list.addView(menuRow("share", Lang.t("শেয়ার"), null, new Runnable() {
+                public void run() { shareUrl(link); }
+            }));
+            list.addView(menuRow("tab", Lang.t("নতুন ট্যাবে খুলুন"), null, new Runnable() {
+                public void run() { newTab(link, true); }
+            }));
+            if (looksLikeMedia(link) || (video != null && video.length() > 0)) {
+                list.addView(menuRow("download", Lang.t("ডাউনলোড"), null, new Runnable() {
+                    public void run() {
+                        Downloader.start(MainActivity.this, link,
+                                uaMobile == null ? "" : uaMobile, null,
+                                mediaMime(link, "video"), 0);
+                    }
+                }));
+            }
+            if (link.startsWith("http")) {
+                list.addView(menuRow("home", Lang.t("হোমে যোগ করুন"), null, new Runnable() {
+                    public void run() { addSiteToHome(link, text); }
+                }));
+            }
+        }
+
+        ScrollView scroll = new ScrollView(this);
+        addDividers(list);
+        scroll.addView(list);
+        sheet.addView(scroll);
+
+        FrameLayout.LayoutParams slp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        slp.gravity = Gravity.BOTTOM;
+        slp.setMargins(dp(8), dp(8), dp(8), dp(8));
+        box.addView(sheet, slp);
+        openOverlay(box);
+        sheet.setTranslationY(dp(48));
+        sheet.setAlpha(0f);
+        sheet.animate().translationY(0).alpha(1f).setDuration(190).start();
+    }
+
+    private void copyText(String label, String text, String done) {
+        try {
+            android.content.ClipboardManager cb =
+                    (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            cb.setPrimaryClip(android.content.ClipData.newPlainText(label, text));
+            toast(done);
+        } catch (Exception e) {
+            toast(Lang.t("কপি করা যায়নি"));
+        }
+    }
+
+    private void shareUrl(String url) {
+        try {
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("text/plain");
+            i.putExtra(Intent.EXTRA_TEXT, url);
+            startActivity(Intent.createChooser(i, Lang.t("শেয়ার করুন")));
+        } catch (Exception e) {
+            toast(Lang.t("শেয়ার করা যায়নি"));
+        }
+    }
+
+    private void addSiteToHome(String url, String label) {
+        if (url == null || !url.startsWith("http")) return;
+        List<String[]> sites = loadSites();
+        for (String[] s : sites) {
+            if (s[1].equals(url)) {
+                toast(Lang.t("সাইটটা আগেই হোমে আছে"));
+                return;
+            }
+        }
+        String name = label == null ? "" : label.trim();
+        if (name.length() == 0) name = prettyUrl(url);
+        if (name.length() > 24) name = name.substring(0, 24).trim() + "…";
+        sites.add(new String[]{name, url});
+        saveList("sites", sites);
+        toast(Lang.t("হোমে যোগ হয়েছে"));
+        refreshHomePages();
+    }
+
     // ---------------------------------------------------------------- fullscreen video
 
     private void exitFullscreen() {
@@ -3048,6 +3257,7 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(prefs.getBoolean("js", true));
         web.addJavascriptInterface(new TranslateBridge(), "BBTranslate");
         web.addJavascriptInterface(new HomeBridge(web), "BBHome");
+        web.addJavascriptInterface(new PlayerBridge(), "BBPlayer");
         s.setDomStorageEnabled(!incognito);
         s.setDatabaseEnabled(!incognito);
         // প্রাইভেট ট্যাব: কিছুই ফোনে জমা হয় না
@@ -3087,7 +3297,12 @@ public class MainActivity extends Activity {
             @Override
             public android.webkit.WebResourceResponse shouldInterceptRequest(
                     WebView view, android.webkit.WebResourceRequest request) {
-                if (request == null || request.isForMainFrame()) return null;
+                if (request == null) return null;
+                if (!request.isForMainFrame()) {
+                    Uri m = request.getUrl();
+                    if (m != null) noteMedia(view, m.toString());
+                }
+                if (request.isForMainFrame()) return null;
                 Uri u = request.getUrl();
                 if (u == null) return null;
                 String scheme = u.getScheme();
@@ -3147,6 +3362,7 @@ public class MainActivity extends Activity {
                 if (isRealPage(url)) {
                     // প্রাইভেট ট্যাবে নিজে থেকে অনুবাদ নয় — পেজের লেখা বাইরে যায় না
                     injectTranslate(view, autoTranslate && (t == null || !t.incognito));
+                    injectPlayer(view);
                     if (darkMode) injectDark(view);
                 }
             }
@@ -3318,6 +3534,23 @@ public class MainActivity extends Activity {
             }
         });
 
+        // লিংকে চেপে ধরলে নিজের মেনু: কপি, শেয়ার, নতুন ট্যাব, প্লেয়ার, ডাউনলোড
+        final float[] press = new float[2];
+        web.setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent e) {
+                if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                    press[0] = e.getX();
+                    press[1] = e.getY();
+                }
+                return false;
+            }
+        });
+        web.setOnLongClickListener(new View.OnLongClickListener() {
+            public boolean onLongClick(View v) {
+                return pageLongPress(web, press[0], press[1]);
+            }
+        });
+
         return web;
     }
 
@@ -3437,7 +3670,9 @@ public class MainActivity extends Activity {
             return true;
         }
         if ((url.startsWith("http://") || url.startsWith("https://"))
-                && prefs.getBoolean("newtab", false)) {
+                && prefs.getBoolean("newtab", true)) {
+            // হোম পাতা/ফাঁকা ট্যাব থেকে খুললে ওই ট্যাবেই, নইলে নতুন ট্যাবে
+            if (!isRealPage(view == null ? null : view.getUrl())) return false;
             newTab(url, true);
             return true;
         }
@@ -4104,8 +4339,15 @@ public class MainActivity extends Activity {
         } catch (Exception e) { /* কুকি না বসালেও বাকি কাজ চলবে */ }
     }
 
-    private void injectDark(WebView view) {
+    /** পেজের ভিডিও অ্যাপের নিজের প্লেয়ারে খোলার স্ক্রিপ্ট */
+    private void injectPlayer(WebView view) {
         if (!prefs.getBoolean("js", true)) return;
+        String js = asset("player.js");
+        if (js == null) return;
+        view.evaluateJavascript(js, null);
+    }
+
+    private void injectDark(WebView view) {        if (!prefs.getBoolean("js", true)) return;
         // "পেজও কালো" বন্ধ থাকলে সাদা পেজ জোর করে কালো করা হবে না
         if (!forceDark && !prefs.getBoolean("darkpages", true)) return;
         String js = asset("dark.js");
@@ -4113,6 +4355,181 @@ public class MainActivity extends Activity {
         // জোর করে কালো: সাইটের নিজের ডার্ক থিম বাদ দিয়ে সব পেজ উল্টে দেওয়া হবে
         view.evaluateJavascript(
                 "window.__bbForceDark=" + (forceDark ? "1" : "0") + ";" + js, null);
+    }
+
+    /** পেজের ভিডিও অ্যাপের নিজের প্লেয়ারে খোলে। প্লেয়ারে সোয়াইপে উজ্জ্বলতা/ভলিউম। */
+    private class PlayerBridge {
+        @JavascriptInterface
+        public boolean open(String url, String title) {
+            if (url == null) return false;
+            String u = url;
+            if (u.startsWith("blob:") || u.startsWith("mediasource:")) {
+                // blob: এর আসল ঠিকানা লুকানো; নেটওয়ার্ক স্নিফার যা ধরেছে সেটাই ব্যবহার করি
+                String best = sniffedBest(current);
+                if (best == null) return false;
+                u = best;
+            }
+            if (!u.startsWith("https://") && !u.startsWith("http://")) return false;
+            final String target = u;
+            final String name = title;
+            runOnUiThread(new Runnable() {
+                public void run() { openPlayer(target, name); }
+            });
+            return true;
+        }
+    }
+
+    /** ভিডিও অ্যাপের প্লেয়ারে খোলে; পেজের কুকি/রেফারার/UA সাথে যায় */
+    private void openPlayer(String url) {
+        openPlayer(url, null);
+    }
+
+    private void openPlayer(String url, String title) {
+        if (url == null) return;
+        boolean remote = url.startsWith("http://") || url.startsWith("https://");
+        boolean local = url.startsWith("content://") || url.startsWith("file://");
+        if (!remote && !local) return;
+        String ck = "";
+        String ref = "";
+        try {
+            if (remote) {
+                ck = CookieManager.getInstance().getCookie(url);
+                ref = current != null && current.getUrl() != null ? current.getUrl() : url;
+            }
+        } catch (Exception ignored) { }
+        String name = title;
+        if (name == null || name.trim().length() == 0) {
+            Tab t = current == null ? null : tabOf(current);
+            name = t == null ? "" : t.title;
+        }
+        Intent i = new Intent(this, PlayerActivity.class);
+        i.putExtra("url", url);
+        i.putExtra("title", name == null ? "" : name);
+        i.putExtra("cookie", ck == null ? "" : ck);
+        i.putExtra("referer", ref);
+        i.putExtra("agent", uaMobile == null ? "" : uaMobile);
+        if (local) i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivity(i);
+        } catch (Exception ignored) { }
+    }
+
+    /** পেজের ভেতরে যে মিডিয়া রিকোয়েস্ট হয় মনে রাখে; blob: ভিডিওর আসল ঠিকানা এখানেই ধরা পড়ে */
+    private void noteMedia(WebView view, String url) {
+        if (view == null || url == null) return;
+        String u = url;
+        int h = u.indexOf('#');
+        if (h > 0) u = u.substring(0, h);
+        String low = u.toLowerCase(java.util.Locale.US);
+        int q = low.indexOf('?');
+        String path = q > 0 ? low.substring(0, q) : low;
+        boolean ok = false;
+        for (String e : MEDIA_EXT) {
+            if (path.endsWith(e)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) return;
+        synchronized (sniffed) {
+            java.util.LinkedHashMap<String, Long> map = sniffed.get(view);
+            if (map == null) {
+                map = new java.util.LinkedHashMap<>();
+                sniffed.put(view, map);
+            }
+            map.remove(u);
+            map.put(u, System.currentTimeMillis());
+            while (map.size() > 40) {
+                java.util.Iterator<String> it = map.keySet().iterator();
+                if (!it.hasNext()) break;
+                it.next();
+                it.remove();
+            }
+        }
+    }
+
+    /** ওই ট্যাবে ধরা পড়া মিডিয়া, নতুন আগে */
+    private java.util.List<String> sniffedList(WebView view) {
+        java.util.List<String> out = new ArrayList<>();
+        if (view == null) return out;
+        synchronized (sniffed) {
+            java.util.LinkedHashMap<String, Long> map = sniffed.get(view);
+            if (map == null) return out;
+            java.util.ArrayList<String> keys = new java.util.ArrayList<>(map.keySet());
+            for (int i = keys.size() - 1; i >= 0; i--) out.add(keys.get(i));
+        }
+        return out;
+    }
+
+    /** blob: ভিডিওর পেছনে যে স্ট্রিম চলছে সেটাই আগে; নাহলে নতুনতম মিডিয়া */
+    private String sniffedBest(WebView view) {
+        java.util.List<String> all = sniffedList(view);
+        for (String u : all) {
+            String p = u.toLowerCase(java.util.Locale.US);
+            int q = p.indexOf('?');
+            if (q > 0) p = p.substring(0, q);
+            if (p.endsWith(".m3u8") || p.endsWith(".mpd")) return u;
+        }
+        return all.isEmpty() ? null : all.get(0);
+    }
+
+    /** মিডিয়া ফাইল বা স্ট্রিমের লিংক কি না */
+    private static boolean looksLikeMedia(String u) {
+        if (u == null) return false;
+        String p = u.toLowerCase(java.util.Locale.US);
+        int q = p.indexOf('?');
+        if (q > 0) p = p.substring(0, q);
+        int h = p.indexOf('#');
+        if (h > 0) p = p.substring(0, h);
+        String[] exts = {".mp4", ".m4v", ".webm", ".mkv", ".mov", ".3gp", ".ts",
+                ".m3u8", ".mpd", ".mp3", ".m4a", ".aac", ".ogg", ".wav"};
+        for (String e : exts) {
+            if (p.endsWith(e)) return true;
+        }
+        return false;
+    }
+
+    /** পেজের ভিডিও/স্ট্রিম বেছে অ্যাপের প্লেয়ারে চালায় */
+    private void playInPlayer() {
+        if (current == null) return;
+        final WebView page = current;
+        current.evaluateJavascript(MediaFinder.JS, new ValueCallback<String>() {
+            public void onReceiveValue(String value) {
+                final List<String[]> vids = new ArrayList<>();
+                java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<>();
+                // নেটওয়ার্কে ধরা পড়া মিডিয়া আগে (blob: ভিডিওর আসল স্ট্রিম এখানেই)
+                for (String u : sniffedList(page)) {
+                    if (seen.add(u)) vids.add(new String[]{u, "video", ""});
+                }
+                for (String[] m : MediaFinder.parse(value)) {
+                    if (!"video".equals(m[1]) && !"stream".equals(m[1])) continue;
+                    if (seen.add(m[0])) vids.add(m);
+                }
+                if (vids.isEmpty()) {
+                    toast(Lang.t("এই পেজে ভিডিও পাওয়া যায়নি"));
+                    return;
+                }
+                if (vids.size() == 1) {
+                    openPlayer(vids.get(0)[0]);
+                    return;
+                }
+                String[] rows = new String[vids.size()];
+                for (int i = 0; i < vids.size(); i++) {
+                    String url = vids.get(i)[0];
+                    String host = "";
+                    try {
+                        host = String.valueOf(Uri.parse(url).getHost());
+                    } catch (Exception ignored) { }
+                    String name = MediaFinder.titleFor(vids.get(i)[1], vids.get(i)[2]);
+                    if (name.length() > 46) name = name.substring(0, 46) + "…";
+                    rows[i] = name + " · " + host;
+                }
+                dialog().setTitle(Lang.t("ভিডিও বাছুন"))
+                        .setItems(rows, (d, which) -> openPlayer(vids.get(which)[0]))
+                        .setNegativeButton(Lang.t("বাতিল"), null)
+                        .show();
+            }
+        });
     }
 
     /** সাইটের CSP-তে আটকে গেলে অনুবাদ এই ব্রিজ দিয়ে আনা হয়। */

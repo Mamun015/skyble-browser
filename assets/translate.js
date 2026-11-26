@@ -6,7 +6,7 @@
   window.__bbTrOn = 1;
 
   var C = window.__bbTrCfg || {};
-  var TL = String(C.tl || 'bn');
+  var TL = String(C.tl || 'en');
   var AUTO = !!C.auto;
   var TNAME = String(C.name || TL);
 
@@ -259,7 +259,7 @@
     var p = Math.round(doneBatches * 100 / totalBatches);
     if (p === shownPercent) return;
     shownPercent = p;
-    showPill(TNAME + ' ভাষায় অনুবাদ হচ্ছে… ' + p + '%');
+    showPill('Translating to ' + TNAME + '… ' + p + '%');
   }
 
   function applyBatch(b) {
@@ -315,22 +315,22 @@
     translated = false;
     stopped = false;
     shownPercent = -1;
-    showPill(TNAME + ' ভাষায় অনুবাদ হচ্ছে… 0%');
+    showPill('Translating to ' + TNAME + '… 0%');
     run(document.body).then(function (ran) {
       if (!ran && done === 0) {
         translating = false;
-        showPill('অনুবাদ করার মতো লেখা নেই');
+        showPill('Nothing to translate');
         hidePill(2500);
         return;
       }
       translating = false;
       translated = done > 0;
       if (translated) {
-        showPill('✓ ' + TNAME + ' ভাষায় অনুবাদ হয়েছে', 'মূল', untranslate, false);
+        showPill('✓ Translated to ' + TNAME, 'Original', untranslate, false);
         pillTimer = setTimeout(function () { hidePill(0); }, 7000);
         watchChanges();
       } else {
-        showPill('অনুবাদ করা যায়নি');
+        showPill('Could not translate');
         hidePill(2500);
       }
     });
@@ -383,7 +383,7 @@
   }
 
   function offer() {
-    showPill('🌐 ' + TNAME + ' ভাষায় অনুবাদ?', 'অনুবাদ', translateAll, true);
+    showPill('🌐 Translate to ' + TNAME + '?', 'Translate', translateAll, true);
     pillTimer = setTimeout(function () { hidePill(0); }, 15000);
   }
 
