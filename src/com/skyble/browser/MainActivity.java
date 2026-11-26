@@ -59,7 +59,8 @@ public class MainActivity extends Activity {
 
     private static final String HOME_URL = "file:///android_asset/home.html";
     private static final String PREFS = "skyble_browser";
-    private static final String VERSION = "1.2.6";
+    /** ইনস্টল করা APK-র versionName — onCreate-এ ভরে নেওয়া হয়, হাতে লেখা সংখ্যা নয় */
+    private String VERSION = "0";
     private boolean autoTranslate = true;
     /** কোন ভাষায় অনুবাদ হবে (Google কোড, ডিফল্ট বাংলা) */
     private String transLang = "en";
@@ -228,6 +229,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Trace.init(this);
+        VERSION = Updater.currentVersion(this);
         Trace.w("app", "start " + VERSION + " sdk " + android.os.Build.VERSION.SDK_INT);
         super.onCreate(savedInstanceState);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);

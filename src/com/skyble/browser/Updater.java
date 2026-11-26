@@ -5,24 +5,37 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/** GitHub-এ নতুন রিলিজ এসেছে কি না দেখে। */
+/**
+ * GitHub-এ নতুন রিলিজ এসেছে কি না দেখে।
+ *
+ * api.github.com ব্যবহার করা হয় না: শেয়ার্ড ইন্টারনেটে (মোবাইল অপারেটরের NAT) ওই
+ * এন্ডপয়েন্ট প্রায়ই 403 দেয়, কারণ একই IP থেকে অনেকে চালায় আর লগইন ছাড়া সীমা
+ * প্রতি ঘণ্টায় ৬০টি। তাই সোজা ওয়েবসাইটের রিডাইরেক্ট দেখি — ওতে কোনো সীমা নেই।
+ */
 final class Updater {
 
-    static final String RELEASES =
-            "https://github.com/Mamun015/skyble-browser/releases/latest";
-    private static final String API =
-            "https://api.github.com/repos/Mamun015/skyble-browser/releases/latest";
+    private static final String REPO =
+            "https://github.com/Mamun015/skyble-browser";
+    static final String RELEASES = REPO + "/releases/latest";
+    /** সীমা ছাড়া, লগইন ছাড়া — রিডাইরেক্ট ব্যর্থ হলে এটা */
+    private static final String ATOM = REPO + "/releases.atom";
+    private static final String UA =
+            "Mozilla/5.0 (Linux; Android 13) SkybleBrowser";
     /** অ্যাপ খোলা থাকলে ঘণ্টায় একবার নিজে থেকেই দেখে */
     private static final long EVERY = 60L * 60 * 1000;
+
+    private static final Pattern TAG =
+            Pattern.compile("releases/tag/([A-Za-z0-9._-]+)");
+    private static final Pattern APK_LINK =
+            Pattern.compile("href=\"([^\"]+\\.apk)\"", Pattern.CASE_INSENSITIVE);
 
     interface Result {
         /**
@@ -59,46 +72,19 @@ final class Updater {
                 String version = null;
                 String apk = null;
                 boolean failed = true;
-                HttpURLConnection cn = null;
-                InputStream in = null;
                 try {
-                    cn = (HttpURLConnection) new URL(API).openConnection();
-                    cn.setConnectTimeout(10000);
-                    cn.setReadTimeout(10000);
-                    cn.setRequestProperty("Accept", "application/vnd.github+json");
-                    cn.setRequestProperty("User-Agent", "BanglaBrowser/" + current);
-                    if (cn.getResponseCode() == 200) {
-                        in = cn.getInputStream();
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        byte[] buf = new byte[4096];
-                        int n;
-                        while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
-                        JSONObject json = new JSONObject(bos.toString("UTF-8"));
+                    String tag = tagFromRedirect();
+                    if (tag == null) tag = tagFromAtom();
+                    if (tag != null) {
                         failed = false;
-                        String tag = json.optString("tag_name", "");
-                        tag = tag.replace("v", "").trim();
+                        String clean = tag.replace("v", "").trim();
                         // "1.2.5 test 1" টেস্ট বিল্ডে বসে থাকলেও 1.2.5 বা তার পরেরটা ধরা পড়ে
-                        if (newer(tag, base) || sameAsTestBase(tag, current)) {
-                            version = tag;
-                            JSONArray assets = json.optJSONArray("assets");
-                            if (assets != null) {
-                                for (int i = 0; i < assets.length(); i++) {
-                                    JSONObject a = assets.optJSONObject(i);
-                                    if (a == null) continue;
-                                    String name = a.optString("name", "");
-                                    if (name.toLowerCase(Locale.US).endsWith(".apk")) {
-                                        apk = a.optString("browser_download_url", "");
-                                        if (apk.length() == 0) apk = null;
-                                        break;
-                                    }
-                                }
-                            }
+                        if (newer(clean, base) || sameAsTestBase(clean, current)) {
+                            version = clean;
+                            apk = apkFor(tag);
                         }
                     }
                 } catch (Exception ignored) {
-                } finally {
-                    try { if (in != null) in.close(); } catch (Exception ignored) { }
-                    if (cn != null) cn.disconnect();
                 }
 
                 if (!failed) {
@@ -118,6 +104,102 @@ final class Updater {
                 });
             }
         }).start();
+    }
+
+    /** releases/latest → releases/tag/v1.3.0 রিডাইরেক্টের ঠিকানা থেকেই ট্যাগ পাওয়া যায়। */
+    private static String tagFromRedirect() {
+        HttpURLConnection cn = null;
+        try {
+            String url = RELEASES;
+            for (int i = 0; i < 6; i++) {
+                cn = (HttpURLConnection) new URL(url).openConnection();
+                cn.setConnectTimeout(10000);
+                cn.setReadTimeout(10000);
+                cn.setInstanceFollowRedirects(false);
+                cn.setRequestProperty("User-Agent", UA);
+                int code = cn.getResponseCode();
+                if (code >= 300 && code < 400) {
+                    String loc = cn.getHeaderField("Location");
+                    cn.disconnect();
+                    cn = null;
+                    if (loc == null) return null;
+                    url = new URL(new URL(url), loc).toString();
+                    continue;
+                }
+                if (code == 200) return firstTag(url);
+                return null;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (cn != null) cn.disconnect();
+        }
+    }
+
+    /** রিডাইরেক্ট আটকালে রিলিজের ফিড — ওতেও সীমা নেই। */
+    private static String tagFromAtom() {
+        String body = get(ATOM);
+        return body == null ? null : firstTag(body);
+    }
+
+    private static String firstTag(String text) {
+        Matcher m = TAG.matcher(text);
+        return m.find() ? m.group(1) : null;
+    }
+
+    /** রিলিজ পাতার অ্যাসেট তালিকা থেকে ব্রাউজারের APK-র লিংক। */
+    private static String apkFor(String tag) {
+        String body = get(REPO + "/releases/expanded_assets/" + tag);
+        if (body != null) {
+            Matcher m = APK_LINK.matcher(body);
+            while (m.find()) {
+                String href = m.group(1);
+                // হেল্পার অ্যাপের APK নয়
+                if (href.toLowerCase(Locale.US).contains("tube")) continue;
+                if (href.startsWith("/")) href = "https://github.com" + href;
+                return href;
+            }
+        }
+        return null;
+    }
+
+    /** GET করে পুরো লেখা ফেরায়, রিডাইরেক্ট নিজে ফলো করে; সমস্যা হলে null। */
+    private static String get(String url) {
+        HttpURLConnection cn = null;
+        InputStream in = null;
+        try {
+            String u = url;
+            for (int i = 0; i < 6; i++) {
+                cn = (HttpURLConnection) new URL(u).openConnection();
+                cn.setConnectTimeout(10000);
+                cn.setReadTimeout(15000);
+                cn.setInstanceFollowRedirects(false);
+                cn.setRequestProperty("User-Agent", UA);
+                int code = cn.getResponseCode();
+                if (code >= 300 && code < 400) {
+                    String loc = cn.getHeaderField("Location");
+                    cn.disconnect();
+                    cn = null;
+                    if (loc == null) return null;
+                    u = new URL(new URL(u), loc).toString();
+                    continue;
+                }
+                if (code != 200) return null;
+                in = cn.getInputStream();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+                return bos.toString("UTF-8");
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            try { if (in != null) in.close(); } catch (Exception ignored) { }
+            if (cn != null) cn.disconnect();
+        }
     }
 
     /** "1.2.5 test 1" থেকে "1.2.5" — টেস্ট বিল্ডের মূল নম্বর */

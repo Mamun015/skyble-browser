@@ -33,12 +33,14 @@ public class SettingsActivity extends Activity {
     private boolean darkMode;
     private int cBg, cSurface, cSurface2, cText, cMuted, cAccent, cAccentSoft, cLine;
     private int cOnAccent, cOnAccentSoft, cAccent2;
-    private static final String VERSION = "1.2.6";
+    /** ইনস্টল করা APK-র versionName — onCreate-এ ভরে নেওয়া হয়, হাতে লেখা সংখ্যা নয় */
+    private String VERSION = "0";
     private LinearLayout list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        VERSION = Updater.currentVersion(this);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         Lang.init(prefs);
         darkMode = themeIsDark();
