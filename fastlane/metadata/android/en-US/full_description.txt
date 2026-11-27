@@ -1,12 +1,30 @@
 Skyble Browser is a small, fast web browser for Android. It has no ads, no
-tracking, no account, and no advertising SDK. The whole app is under one
-megabyte because it uses the Android System WebView that is already on your
-phone instead of shipping a second copy of Chromium.
+tracking, no account, and no advertising SDK. About 2.9 MB of the 3 MB download
+is the video player engine; pages are drawn by the Android System WebView that
+is already on your phone instead of a second copy of Chromium.
 
 Tabs
 
-Open up to 50 tabs. Each tab keeps its own history, and your open tabs come
-back when you start the app again.
+Open up to 50 tabs. The tab screen shows them as a grid of square cards with a
+picture of each page, so you can tell them apart at a glance, and your open tabs
+come back when you start the app again.
+
+Video player
+
+Videos from websites and videos you downloaded play in the app's own player:
+MP4, WebM, MKV, MOV, MP3, M4A, HLS and DASH. Swipe up or down on the left half
+for brightness, on the right half for volume, and sideways to seek. Fit, Fill
+and Stretch ratios, 0.5x to 2x speed, audio track choice, mute, and hardware or
+software decoding that can be switched while a video plays.
+
+Downloads
+
+YouTube videos save at up to 1080p as ordinary MP4 files; high qualities arrive
+as separate picture and sound tracks and are joined on the phone. Media from
+other sites, plus PDF, ZIP and APK links, lands in the same built-in list with
+progress, speed and a cancel button. When a download starts you can choose the
+built-in downloader or a download manager already on the phone, such as ADM,
+and remember that choice.
 
 Privacy
 
@@ -30,12 +48,9 @@ The interface is English by default, with a complete Bengali translation
 available in the settings. Pages written in English can be translated to
 Bengali from the AI section, off by default.
 
-Downloads
-
-Downloads started from a page show up in a built-in list with progress, speed
-and a cancel button. Files are saved to the phone's normal Downloads folder.
-
 Updates
 
 Skyble can check GitHub releases for a newer version and open the download for
 you.
+
+Open source, licensed under the Mozilla Public License 2.0.

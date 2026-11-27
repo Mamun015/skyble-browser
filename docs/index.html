@@ -80,11 +80,11 @@
   "applicationCategory": "BrowserApplication",
   "applicationSubCategory": "Web browser",
   "operatingSystem": "Android 5.0 and newer",
-  "softwareVersion": "1.3.0",
+  "softwareVersion": "1.3.1",
   "fileSize": "2.9MB",
   "inLanguage": ["en", "bn"],
   "description": "A small, fast web browser for Android with tabs, an ad and tracker host blocker, dark mode, English or Bengali interface, Material You theming on Android 12+, automatic page translation, its own video player for web and downloaded video, and a built-in downloader that saves YouTube video at 1080p and 720p as MP4 plus video, audio and files from other sites. Pages are drawn by the Android System WebView, so the app stays small.",
-  "featureList": ["Built-in video player with swipe brightness and volume", "YouTube video download in 1080p and 720p", "Media downloads from other sites", "Up to 50 tabs", "Ad and tracker host blocking", "Dark mode", "English and Bengali interface", "Material You theming on Android 12+", "Automatic page translation"],
+  "featureList": ["Built-in video player with swipe brightness and volume", "Tab screen with square page previews", "Choice of built-in or third-party download manager", "YouTube video download in 1080p and 720p", "Media downloads from other sites", "Up to 50 tabs", "Ad and tracker host blocking", "Dark mode", "English and Bengali interface", "Material You theming on Android 12+", "Automatic page translation"],
   "url": "https://mamun015.github.io/skyble-browser/",
   "downloadUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
   "installUrl": "https://github.com/Mamun015/skyble-browser/releases/latest",
@@ -241,7 +241,7 @@ footer a{color:var(--muted)}
         <a class="btn primary" href="download.html">Download the APK</a>
         <a class="btn ghost" href="https://github.com/Mamun015/skyble-browser">Source code</a>
       </div>
-      <p class="meta" style="margin:14px 0 0;font-size:14px;color:#9dc0f5">Version 1.3.0 · 2.9 MB · released 26 November 2026 · <a href="download.html" style="color:#dbe8ff">all download details</a></p>
+      <p class="meta" style="margin:14px 0 0;font-size:14px;color:#9dc0f5">Version 1.3.1 · 2.9 MB · released 27 November 2026 · <a href="download.html" style="color:#dbe8ff">all download details</a></p>
       <div class="facts">
         <span>Android 5.0+</span><span>2.9 MB</span><span>MPL-2.0</span><span>Video player</span><span>YouTube 1080p</span><span>No ads · No trackers</span>
       </div>
@@ -253,13 +253,13 @@ footer a{color:var(--muted)}
 <section id="screenshots">
   <div class="wrap">
     <h2>What it looks like</h2>
-    <p class="sub">A start page with your favourite sites, a bottom menu within thumb reach,
-      and settings that are only one screen deep.</p>
+    <p class="sub">A start page with your favourite sites, tabs shown as a grid of page
+      previews, a bottom menu within thumb reach, and settings that are only one screen deep.</p>
     <div class="shots">
       <figure><img src="shots/1.png" alt="Skyble Browser start page with search bar, favourite sites and recent history" width="230" loading="lazy"><figcaption>Start page</figcaption></figure>
-      <figure><img src="shots/2.png" alt="Skyble Browser menu with new tab, bookmarks, history, downloads and page tools" width="230" loading="lazy"><figcaption>Menu</figcaption></figure>
-      <figure><img src="shots/3.png" alt="Skyble Browser settings for language, search engine, theme, JavaScript and translation" width="230" loading="lazy"><figcaption>Settings</figcaption></figure>
-      <figure><img src="shots/4.png" alt="About screen showing version, developer, license and trademark notice" width="230" loading="lazy"><figcaption>About</figcaption></figure>
+      <figure><img src="shots/2.png" alt="Square tab grid: each tab card shows a picture of the page, its title and a close button, with the active tab outlined" width="230" loading="lazy"><figcaption>Tab grid</figcaption></figure>
+      <figure><img src="shots/3.png" alt="Skyble Browser menu with new tab, bookmarks, history, downloads and page tools" width="230" loading="lazy"><figcaption>Menu</figcaption></figure>
+      <figure><img src="shots/4.png" alt="Skyble Browser settings for language, search engine, theme, JavaScript, download manager and translation" width="230" loading="lazy"><figcaption>Settings</figcaption></figure>
     </div>
   </div>
 </section>
@@ -333,7 +333,9 @@ footer a{color:var(--muted)}
           accent and background colors follow your wallpaper. Older phones use the brand
           colors.</p></div>
       <div class="card"><div class="k">Tabs</div><h3>Up to 50 tabs</h3>
-        <p>Each tab keeps its own history, and your open tabs come back when you reopen the app.</p></div>
+        <p>Every tab keeps its own history, and the tab screen shows them as a grid of square
+          cards with a picture of each page. The active tab has a thicker border. Your open
+          tabs come back when you reopen the app.</p></div>
       <div class="card"><div class="k">Privacy</div><h3>Ad and tracker blocking</h3>
         <p>Known advertising and tracking hosts are blocked before they load. No analytics, no telemetry, no advertising SDK.</p></div>
       <div class="card"><div class="k">Reading</div><h3>Dark mode that works</h3>
@@ -343,6 +345,9 @@ footer a{color:var(--muted)}
       <div class="card"><div class="k">Downloads</div><h3>Built-in download list</h3>
         <p>YouTube video, page media and ordinary files in one screen, with progress, speed and
           cancel. Everything lands in the phone's normal Downloads folder.</p></div>
+      <div class="card"><div class="k">Download manager</div><h3>Use the app you like</h3>
+        <p>When a file downloads, choose the built-in downloader or an app you already have
+          such as ADM. The choice can be remembered, and changed later in Settings.</p></div>
       <div class="card"><div class="k">Search</div><h3>Live suggestions</h3>
         <p>Suggestions from your search engine, plus matches from your own history and bookmarks.</p></div>
       <div class="card"><div class="k">Tools</div><h3>Find, print, share</h3>
@@ -389,7 +394,7 @@ footer a{color:var(--muted)}
     <p class="sub">No store account needed. The APK is signed with the same key every release,
       so updates install straight over the previous version.</p>
     <ol class="steps">
-      <li>Download <strong>SkybleBrowser-1.3.0.apk</strong> from the
+      <li>Download <strong>SkybleBrowser-1.3.1.apk</strong> from the
         <a href="https://github.com/Mamun015/skyble-browser/releases/latest">latest release</a>.</li>
       <li>Open the file. If Android asks, allow installs from your browser or file manager.</li>
       <li>Tap Install. Open the app, then set it as your default browser from the menu if you want.</li>
@@ -465,6 +470,19 @@ footer a{color:var(--muted)}
     <h2>What changed</h2>
     <p class="sub">Short notes for each release. The <a href="https://github.com/Mamun015/skyble-browser/releases">releases page</a> has every build with its checksum.</p>
 
+    <h3 style="margin-top:26px">1.3.1 — 27 November 2026</h3>
+    <ul class="clean">
+      <li>The tab screen is now a grid of square cards, one picture of each page, two to a row.
+        A thin border frames every card and the active tab carries a thicker accent border.</li>
+      <li>Closing a tab no longer closes the tab screen; the grid stays open and refills.</li>
+      <li>When a download starts, pick the built-in downloader or a download app already on the
+        phone such as ADM. "Always use this" remembers the choice, and Settings has a download
+        manager row to change it later.</li>
+      <li>The player's progress bar only moves forward, so it no longer jumps ahead and back
+        while a video plays in landscape.</li>
+      <li>Swipes near the bottom control bar no longer start a seek or volume gesture by mistake.</li>
+    </ul>
+
     <h3 style="margin-top:26px">1.3.0 — 26 November 2026</h3>
     <ul class="clean">
       <li>A video player is built in. Videos from websites and videos you downloaded open in
@@ -487,7 +505,7 @@ footer a{color:var(--muted)}
       <li>Smaller fixed set of request headers, faster first paint on slow connections.</li>
     </ul>
 
-    <p class="sub" style="margin-top:22px">The 1.3.0 download is 2.9 MB. The extra 2 MB is the
+    <p class="sub" style="margin-top:22px">The 1.3.1 download is 2.9 MB. The extra 2 MB is the
       ExoPlayer engine; nothing else in the app grew.</p>
   </div>
 </section>

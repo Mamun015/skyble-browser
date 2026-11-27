@@ -14,7 +14,7 @@ if [ ! -f "$R8" ] && [ -n "$ANDROID_HOME" ]; then
   R8="$(ls -d "$ANDROID_HOME"/build-tools/*/lib/d8.jar 2>/dev/null | sort -V | tail -1)"
 fi
 OUT="$PWD/build"
-NAME="SkybleBrowser-1.3.0.apk"
+NAME="SkybleBrowser-1.3.1.apk"
 
 # On the F-Droid build server the SDK tools are not on PATH by default.
 if ! command -v aapt >/dev/null 2>&1 && [ -n "$ANDROID_HOME" ]; then

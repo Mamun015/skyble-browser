@@ -127,6 +127,11 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
     private int maxVolume = 15;
     private long seekStartPos;
     private long seekTarget;
+    /** নিচের কন্ট্রোল বারে শুরু হওয়া ছোঁয়ায় সিক/ভলিউম ধরবে না */
+    private boolean modeBlocked;
+    /** শেষবার স্ক্রিনে বসানো অবস্থান — হঠাৎ লাফ আটকাতে */
+    private long lastProg = -1;
+    private long lastTickAt = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -315,6 +320,7 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         curTime.setTextColor(0xFFFFFFFF);
         curTime.setTextSize(12);
         curTime.setText("0:00");
+        curTime.setMinWidth(dp(42));   // লেখার দৈর্ঘ্য বদলালে বার সরে যায় না
         times.addView(curTime);
 
         bar = new SeekBar(this);
@@ -350,6 +356,7 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         durTime.setTextColor(0xCCFFFFFF);
         durTime.setTextSize(12);
         durTime.setText("0:00");
+        durTime.setMinWidth(dp(42));
         times.addView(durTime);
         col.addView(times);
 
@@ -697,6 +704,8 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         } catch (Exception ignored) { }
         // সিকবার সাথে সাথে নতুন জায়গায় বসে, তারপর ঘড়ি কিছুক্ষণ ওই মানেই থাকে
         holdUntil = System.currentTimeMillis() + 700;
+        lastProg = ms;
+        lastTickAt = System.currentTimeMillis();
         if (bar != null) {
             long d = duration();
             if (d > 0) {
@@ -724,6 +733,9 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
                     player.seekTo(0);
                     player.play();
                     ended = false;
+                    lastProg = 0;
+                    lastTickAt = System.currentTimeMillis();
+                    holdUntil = System.currentTimeMillis() + 700;
                 } else if (player.isPlaying()) {
                     player.pause();
                 } else {
@@ -892,16 +904,30 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         if (bar == null || curTime == null || durTime == null) return;
         long d = duration();
         long p = position();
-        if (!seeking && System.currentTimeMillis() >= holdUntil) {
+        long now = System.currentTimeMillis();
+        if (!seeking && now >= holdUntil) {
             if (d > 0) {
+                // প্লেয়ার মাঝে মাঝে পুরোনো/ভুল অবস্থান দেয় — বারটা সামনে লাফ
+                // দিয়ে আবার পিছিয়ে আসে। তাই বার শুধু সামনে এগোয়, স্বাভাবিক
+                // গতির চেয়ে বড় লাফ হলে অল্প অল্প করে এগিয়ে ধরে।
+                long shown = p;
+                if (lastProg >= 0 && lastTickAt > 0) {
+                    long since = Math.max(1, now - lastTickAt);
+                    long cap = since * 3 + 500;
+                    if (shown < lastProg) shown = lastProg;
+                    else if (shown > lastProg + cap) shown = lastProg + cap;
+                }
+                lastProg = shown;
+                lastTickAt = now;
+
                 int max = (int) Math.min(2000000000L, Math.max(1, d / 10));
                 if (bar.getMax() != max) bar.setMax(max);
-                int prog = (int) Math.min(max, Math.max(0, p / 10));
+                int prog = (int) Math.min(max, Math.max(0, shown / 10));
                 bar.setProgress(prog);
                 int sec = (int) Math.min(max, Math.max(prog, buffered() / 10));
                 bar.setSecondaryProgress(sec);
                 bar.setEnabled(true);
-                curTime.setText(fmt(p));
+                curTime.setText(fmt(shown));
             } else {
                 bar.setEnabled(false);
             }
@@ -983,6 +1009,8 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
                 downY = e.getY();
                 startY = e.getY();
                 mode = MODE_NONE;
+                // কন্ট্রোল বারের কাছে আঙুল রাখলে ভুল করে সিক হয়ে লাফ দিত — বন্ধ
+                modeBlocked = inControlsBar(e.getY());
                 startBrightness = currentBrightness();
                 startVolume = audio == null ? 0
                         : audio.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -994,9 +1022,10 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
             case MotionEvent.ACTION_MOVE:
                 float dx = e.getX() - downX;
                 float dy = e.getY() - downY;
-                if (mode == MODE_NONE) {
-                    if (Math.abs(dx) > dp(18) && Math.abs(dx) > Math.abs(dy)) mode = MODE_SEEK;
-                    else if (Math.abs(dy) > dp(18)) {
+                if (mode == MODE_NONE && !modeBlocked) {
+                    if (Math.abs(dx) > dp(28) && Math.abs(dx) > Math.abs(dy) * 1.6f) {
+                        mode = MODE_SEEK;
+                    } else if (Math.abs(dy) > dp(28)) {
                         mode = e.getX() < rootView.getWidth() / 2f ? MODE_BRIGHT : MODE_VOLUME;
                     }
                 }
@@ -1048,6 +1077,14 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         return (int) (v * getResources().getDisplayMetrics().density);
     }
 
+    /** ছোঁয়াটা নিচের কন্ট্রোল বারের ভেতরে কি না (স্ক্রিনের স্থানাঙ্কে) */
+    private boolean inControlsBar(float y) {
+        if (!controlsOn || bottomBar == null || rootView == null) return false;
+        int h = bottomBar.getHeight();
+        if (h <= 0) return false;
+        return y > rootView.getHeight() - h - dp(14);
+    }
+
     private void toast(String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
     }
@@ -1095,7 +1132,13 @@ public class PlayerActivity extends Activity implements View.OnTouchListener {
         super.onConfigurationChanged(cfg);
         if (rootView != null) {
             rootView.post(new Runnable() {
-                public void run() { applyAspect(); }
+                public void run() {
+                    // ঘোরানোর পরে প্লেয়ার এক মুহূর্ত ভুল অবস্থান দিতে পারে
+                    lastProg = position();
+                    lastTickAt = System.currentTimeMillis();
+                    holdUntil = System.currentTimeMillis() + 500;
+                    applyAspect();
+                }
             });
         }
     }

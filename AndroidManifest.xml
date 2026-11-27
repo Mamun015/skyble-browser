@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.skyble.browser"
-    android:versionCode="37"
-    android:versionName="1.3.0">
+    android:versionCode="38"
+    android:versionName="1.3.1">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -21,6 +21,15 @@
     <queries>
         <package android:name="com.skyble.tube" />
         <package android:name="com.skyble.tube.plugin" />
+        <!-- Android 11+: ফোনে থাকা অন্য ডাউনলোড ম্যানেজার (ADM ইত্যাদি) দেখা যায় -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" android:mimeType="*/*" />
+        </intent>
     </queries>
 
     <application

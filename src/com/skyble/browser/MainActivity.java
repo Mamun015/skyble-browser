@@ -8,6 +8,8 @@ import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -42,6 +44,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.CompoundButton;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -156,6 +160,8 @@ public class MainActivity extends Activity {
         String lastGood = "";
         boolean loading;
         boolean incognito;
+        /** ট্যাব সুইচারে দেখানোর ছোট ছবি — ট্যাব থেকে সরে যাওয়ার সময় তোলা হয় */
+        Bitmap thumb;
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -290,6 +296,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        Tab act = active();
+        if (act != null) captureThumb(act);
         saveSession();
         super.onPause();
     }
@@ -1001,6 +1009,13 @@ public class MainActivity extends Activity {
 
     private void selectTab(int index) {
         if (index < 0 || index >= tabs.size()) return;
+        if (index != activeIndex) {
+            // পুরনো ট্যাবের ছবি তুলে রাখি, সুইচারে পরে দেখাবে
+            Tab old = active();
+            if (old != null && old.web != null && old.web.getVisibility() == View.VISIBLE) {
+                captureThumb(old);
+            }
+        }
         activeIndex = index;
         for (int i = 0; i < tabs.size(); i++) {
             if (tabs.get(i).web != null) {
@@ -1072,6 +1087,10 @@ public class MainActivity extends Activity {
             t.web.destroy();
         }
         boolean wasPrivate = t.incognito;
+        if (t.thumb != null) {
+            t.thumb.recycle();
+            t.thumb = null;
+        }
         tabs.remove(index);
         if (tabs.isEmpty()) {
             newTab(homeUrl(), true);
@@ -1085,26 +1104,48 @@ public class MainActivity extends Activity {
         applyPendingPalette();
     }
 
+    private FrameLayout tabSheet;
+    private LinearLayout tabGrid;
+    private TextView tabCount;
+
     private void showTabSwitcher() {
         hideSuggestions();
-        final FrameLayout box = new FrameLayout(this);
+        Tab act = active();
+        if (act != null) captureThumb(act);
+
+        FrameLayout box = new FrameLayout(this);
         box.setBackgroundColor(Theme.withAlpha(cBg, 0xF7));
 
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(dp(16), dp(18), dp(16), dp(12));
+        panel.setPadding(dp(16), dp(16), dp(16), dp(10));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView title = new TextView(this);
-        title.setText(Lang.t("ট্যাব (") + tabs.size() + ")");
-        title.setTextSize(18);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        title.setTextColor(cText);
-        header.addView(title, new LinearLayout.LayoutParams(0,
+        tabCount = new TextView(this);
+        tabCount.setText(Lang.t("ট্যাব (") + tabs.size() + ")");
+        tabCount.setTextSize(18);
+        tabCount.setTypeface(Typeface.DEFAULT_BOLD);
+        tabCount.setTextColor(cText);
+        header.addView(tabCount, new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView plus = new TextView(this);
+        plus.setText("＋");
+        plus.setTextSize(20);
+        plus.setTextColor(cAccent);
+        plus.setGravity(Gravity.CENTER);
+        plus.setPadding(dp(10), dp(4), dp(10), dp(4));
+        rippleRound(plus, 18);
+        plus.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                newTab(homeUrl(), true);
+                fillTabGrid();
+            }
+        });
+        header.addView(plus);
 
         TextView done = new TextView(this);
         done.setText(Lang.t("সম্পন্ন"));
@@ -1120,146 +1161,235 @@ public class MainActivity extends Activity {
 
         panel.addView(header);
 
-        LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        alp.topMargin = dp(12);
-        alp.bottomMargin = dp(4);
-
-        TextView add = new TextView(this);
-        add.setText(Lang.t("＋ নতুন ট্যাব"));
-        add.setTextSize(13);
-        add.setTypeface(Typeface.DEFAULT_BOLD);
-        add.setTextColor(cOnAccentSoft);
-        add.setGravity(Gravity.CENTER);
-        add.setPadding(dp(12), dp(11), dp(12), dp(11));
-        add.setBackground(pill(cAccentSoft, 16));
-        rippleOn(add, 16, pill(cAccentSoft, 16));
-        add.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                closeOverlay();
-                newTab(homeUrl(), true);
-            }
-        });
-        LinearLayout.LayoutParams addLp = new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        addLp.rightMargin = dp(8);
-        actions.addView(add, addLp);
-
-        TextView closeAll = new TextView(this);
-        closeAll.setText(Lang.t("সব ট্যাব বন্ধ"));
-        closeAll.setTextSize(13);
-        closeAll.setTypeface(Typeface.DEFAULT_BOLD);
-        closeAll.setTextColor(cMuted);
-        closeAll.setGravity(Gravity.CENTER);
-        closeAll.setPadding(dp(12), dp(11), dp(12), dp(11));
-        closeAll.setBackground(roundedBorder(cSurface, 16));
-        rippleOn(closeAll, 16, roundedBorder(cSurface, 16));
-        closeAll.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { confirmCloseAll(); }
-        });
-        actions.addView(closeAll, new LinearLayout.LayoutParams(0,
-                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        panel.addView(actions, alp);
-
         ScrollView scroll = new ScrollView(this);
-        LinearLayout list = new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        list.setPadding(0, dp(10), 0, 0);
+        tabGrid = new LinearLayout(this);
+        tabGrid.setOrientation(LinearLayout.VERTICAL);
+        tabGrid.setPadding(0, dp(12), 0, dp(24));
+        scroll.addView(tabGrid, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        scroll.setClipToPadding(false);
 
-        for (int i = 0; i < tabs.size(); i++) {
-            final int idx = i;
-            final Tab t = tabs.get(i);
-
-            LinearLayout card = new LinearLayout(this);
-            card.setOrientation(LinearLayout.HORIZONTAL);
-            card.setGravity(Gravity.CENTER_VERTICAL);
-            card.setPadding(dp(12), dp(12), dp(6), dp(12));
-            GradientDrawable cardBg = rounded(i == activeIndex ? cAccentSoft : cSurface2, 16);
-            card.setBackground(cardBg);
-            rippleOn(card, 16, cardBg);
-
-            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            clp.bottomMargin = dp(8);
-
-            if (isRealPage(t.url)) {
-                ImageView icon = new ImageView(this);
-                icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                Favicon.bind(this, t.url, icon, cAccent, cOnAccent);
-                LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(22), dp(22));
-                ilp.rightMargin = dp(10);
-                card.addView(icon, ilp);
-            }
-
-            LinearLayout text = new LinearLayout(this);
-            text.setOrientation(LinearLayout.VERTICAL);
-
-            TextView name = new TextView(this);
-            String label = t.title;
-            if (t.incognito) label = "🕶 " + (label == null || label.length() == 0
-                    ? Lang.t("প্রাইভেট ট্যাব") : label);
-            if (label == null || label.length() == 0) {
-                label = t.url == null ? Lang.t("নতুন ট্যাব") : prettyUrl(t.url);
-                if (label.startsWith("file:")) label = Lang.t("হোম");
-            }
-            name.setText(label);
-            name.setTextSize(14);
-            name.setTextColor(cText);
-            name.setSingleLine(true);
-            name.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            text.addView(name);
-
-            TextView addr = new TextView(this);
-            if (t.url != null && t.url.startsWith(HOME_URL)) {
-                addr.setText(Lang.t("হোম"));
-            } else {
-                addr.setText(t.url == null ? "" : t.url);
-            }
-            addr.setTextSize(11);
-            addr.setTextColor(cMuted);
-            addr.setSingleLine(true);
-            addr.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            addr.setPadding(0, dp(2), 0, 0);
-            text.addView(addr);
-
-            card.addView(text, new LinearLayout.LayoutParams(0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-            TextView close = new TextView(this);
-            close.setText("✕");
-            close.setTextSize(14);
-            close.setTextColor(cMuted);
-            close.setGravity(Gravity.CENTER);
-            close.setPadding(dp(10), dp(8), dp(10), dp(8));
-            rippleRound(close, 16);
-            close.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    closeOverlay();
-                    closeTab(idx);
-                }
-            });
-            card.addView(close);
-
-            card.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    closeOverlay();
-                    selectTab(idx);
-                }
-            });
-
-            list.addView(card, clp);
-        }
-
-        scroll.addView(list);
         panel.addView(scroll, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         box.addView(panel, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        tabSheet = box;
+        fillTabGrid();
         openOverlay(box);
+    }
+
+    /** সুইচারের বড় বর্গাকার ট্যাব-কার্ডগুলো আবার সাজায় (ট্যাব বন্ধ/খোলার পরে) */
+    private void fillTabGrid() {
+        if (tabGrid == null) return;
+        if (tabCount != null) tabCount.setText(Lang.t("ট্যাব (") + tabs.size() + ")");
+        tabGrid.removeAllViews();
+        int gap = dp(10);
+        for (int i = 0; i < tabs.size(); i += 2) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rlp.bottomMargin = gap;
+
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,
+                    ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+            clp.rightMargin = gap / 2;
+            row.addView(tabCard(i), clp);
+
+            if (i + 1 < tabs.size()) {
+                LinearLayout.LayoutParams rlp2 = new LinearLayout.LayoutParams(0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+                rlp2.leftMargin = gap / 2;
+                row.addView(tabCard(i + 1), rlp2);
+            } else {
+                View pad = new View(this);
+                LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(0, 1, 1f);
+                plp.leftMargin = gap / 2;
+                row.addView(pad, plp);
+            }
+            tabGrid.addView(row, rlp);
+        }
+    }
+
+    /** ক্রোমের মতো বর্গাকার ট্যাব: উপরে পেজের ছবি, নিচে নাম আর বন্ধের বোতাম */
+    private View tabCard(final int idx) {
+        final Tab t = tabs.get(idx);
+
+        SquareFrame card = new SquareFrame(this);
+        GradientDrawable bg = rounded(idx == activeIndex ? cSurface : cSurface2, 14);
+        card.setBackground(bg);
+        if (Build.VERSION.SDK_INT >= 21) card.setClipToOutline(true);
+        // লাইনটা ছবির ওপরে বসে (ফোরগ্রাউন্ড), তাই সাদা পেজেও স্পষ্ট দেখা যায়
+        GradientDrawable edge = new GradientDrawable();
+        edge.setColor(Color.TRANSPARENT);
+        edge.setCornerRadius(dp(14));
+        if (idx == activeIndex) edge.setStroke(dp(3), cAccent);
+        else edge.setStroke(dp(1), Theme.withAlpha(cMuted, 0x70));
+        card.setForeground(edge);
+        card.setClickable(true);
+
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        card.addView(col, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+        FrameLayout shotBox = new FrameLayout(this);
+        shotBox.setBackgroundColor(cSurface2);
+        if (t.thumb != null) {
+            ImageView shot = new ImageView(this);
+            shot.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            shot.setImageBitmap(t.thumb);
+            shotBox.addView(shot, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        } else {
+            TextView empty = new TextView(this);
+            empty.setText(t.incognito ? "🕶" : "🌐");
+            empty.setTextSize(30);
+            empty.setGravity(Gravity.CENTER);
+            shotBox.addView(empty, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        if (t.incognito) {
+            TextView badge = new TextView(this);
+            badge.setText("🕶");
+            badge.setTextSize(11);
+            badge.setPadding(dp(5), dp(2), dp(5), dp(2));
+            badge.setBackground(pill(0x99000000, 8));
+            FrameLayout.LayoutParams blp = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            blp.gravity = Gravity.TOP | Gravity.LEFT;
+            blp.leftMargin = dp(6);
+            blp.topMargin = dp(6);
+            shotBox.addView(badge, blp);
+        }
+        col.addView(shotBox, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+
+        View divider = new View(this);
+        divider.setBackgroundColor(Theme.withAlpha(cMuted, 0x38));
+        col.addView(divider, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(1)));
+
+        LinearLayout strip = new LinearLayout(this);
+        strip.setOrientation(LinearLayout.HORIZONTAL);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(dp(8), dp(6), dp(2), dp(6));
+
+        if (isRealPage(t.url)) {
+            ImageView icon = new ImageView(this);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            Favicon.bind(this, t.url, icon, cAccent, cOnAccent);
+            LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(dp(16), dp(16));
+            ilp.rightMargin = dp(6);
+            strip.addView(icon, ilp);
+        }
+
+        TextView name = new TextView(this);
+        String label = t.title;
+        if (label == null || label.length() == 0) {
+            label = t.url == null || t.url.length() == 0 ? Lang.t("নতুন ট্যাব") : prettyUrl(t.url);
+            if (label.startsWith("file:")) label = Lang.t("হোম");
+        }
+        name.setText(label);
+        name.setTextSize(11);
+        name.setTextColor(cText);
+        name.setSingleLine(true);
+        name.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        strip.addView(name, new LinearLayout.LayoutParams(0,
+                ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView close = new TextView(this);
+        close.setText("✕");
+        close.setTextSize(12);
+        close.setTextColor(cMuted);
+        close.setGravity(Gravity.CENTER);
+        close.setPadding(dp(7), dp(4), dp(7), dp(4));
+        rippleRound(close, 14);
+        close.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // সুইচার খোলা থাকে, শুধু কার্ডটা সরে যায়
+                closeTab(idx);
+                fillTabGrid();
+            }
+        });
+        strip.addView(close, new LinearLayout.LayoutParams(dp(28), dp(28)));
+
+        col.addView(strip, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        card.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                closeOverlay();
+                selectTab(idx);
+            }
+        });
+        return card;
+    }
+
+    /** ট্যাবের পেজটা ছোট ছবি হিসেবে তুলে রাখে (স্ক্রিনে দেখানো অবস্থায়) */
+    private void captureThumb(Tab t) {
+        if (t == null || t.web == null) return;
+        try {
+            int w = t.web.getWidth();
+            int h = t.web.getHeight();
+            if (w <= 0 || h <= 0) return;
+            float scale = Math.min(1f, 320f / w);
+            int tw = Math.max(1, Math.round(w * scale));
+            int th = Math.max(1, Math.round(h * scale));
+            Bitmap full = Bitmap.createBitmap(tw, th, Bitmap.Config.RGB_565);
+            Canvas c = new Canvas(full);
+            c.scale(scale, scale);
+            t.web.draw(c);
+            // কিছু ফোনে WebView নিজের ছবি দেয় না, পুরো সাদা/কালো আসে — тогда পুরোনোটা রাখি
+            if (isFlat(full)) {
+                full.recycle();
+                return;
+            }
+            // কার্ড বর্গাকার, তাই পেজের ওপরের বর্গাকার অংশটাই রাখি
+            int side = Math.min(tw, th);
+            Bitmap shot = full;
+            if (side < tw || side < th) {
+                shot = Bitmap.createBitmap(full, 0, 0, side, side);
+                full.recycle();
+            }
+            if (t.thumb != null && t.thumb != shot) t.thumb.recycle();
+            t.thumb = shot;
+        } catch (Throwable ignored) { }
+    }
+
+    /** ছবিটা কি এক রঙের (অর্থাৎ কিছুই আঁকা হয়নি)? */
+    private static boolean isFlat(Bitmap bm) {
+        try {
+            int w = bm.getWidth();
+            int h = bm.getHeight();
+            if (w < 4 || h < 4) return true;
+            int first = bm.getPixel(0, 0);
+            int sx = Math.max(1, w / 8);
+            int sy = Math.max(1, h / 8);
+            for (int y = 0; y < h; y += sy) {
+                for (int x = 0; x < w; x += sx) {
+                    if (bm.getPixel(x, y) != first) return false;
+                }
+            }
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** সবসময় বর্গাকার থাকে, ভেতরের সব কিছু ওই বর্গে বসে */
+    private static class SquareFrame extends FrameLayout {
+        SquareFrame(Context c) {
+            super(c);
+        }
+
+        @Override
+        protected void onMeasure(int widthSpec, int heightSpec) {
+            super.onMeasure(widthSpec, widthSpec);
+            int side = getMeasuredWidth();
+            setMeasuredDimension(side, side);
+        }
     }
 
     /** সব ট্যাব মুছে ফেলার আগে একবার জিজ্ঞাসা */
@@ -2431,6 +2561,113 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------- media
 
+    private static final String DL_ASK = "ask";
+
+    /**
+     * ডাউনলোড শুরু করার আগে জিজ্ঞাসা: ব্রাউজারের নিজের ডাউনলোডার, নাকি ফোনে
+     * ইনস্টল থাকা অন্য ডাউনলোড ম্যানেজার (ADM ইত্যাদি)। পছন্দ মনে রাখা যায়।
+     */
+    private void askDownload(final String url, final String ua, final String cd,
+                             final String mime, final long len) {
+        String saved = prefs.getString("dlmgr", DL_ASK);
+        if ("builtin".equals(saved)) {
+            Downloader.start(this, url, ua, cd, mime, len);
+            return;
+        }
+        if (!DL_ASK.equals(saved) && saved.length() > 0) {
+            if (DownloadApps.open(this, saved, url, mime)) return;
+            // অ্যাপটা আর নেই — আবার জিজ্ঞাসা করব
+            prefs.edit().putString("dlmgr", DL_ASK).apply();
+        }
+        List<DownloadApps.App> apps = DownloadApps.list(this, url, mime);
+        if (apps.isEmpty()) {
+            Downloader.start(this, url, ua, cd, mime, len);
+            return;
+        }
+        showDownloadPicker(url, ua, cd, mime, len, apps);
+    }
+
+    private void showDownloadPicker(final String url, final String ua, final String cd,
+                                    final String mime, final long len,
+                                    final List<DownloadApps.App> apps) {
+        String name = Downloader.fileName(url, cd, mime);
+        String host = "";
+        try {
+            host = String.valueOf(Uri.parse(url).getHost());
+        } catch (Exception ignored) { }
+        if ("null".equals(host)) host = "";
+
+        final String[] labels = new String[apps.size() + 1];
+        labels[0] = Lang.t("Skyble ডাউনলোডার (ভেতরে)");
+        for (int i = 0; i < apps.size(); i++) labels[i + 1] = apps.get(i).label;
+
+        final boolean[] remember = {false};
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(2), dp(22), 0);
+
+        TextView info = new TextView(this);
+        String line = name + "\n";
+        if (len > 0) line += Downloader.sizeText(len) + " · ";
+        line += host;
+        info.setText(line);
+        info.setTextSize(12);
+        info.setTextColor(cMuted);
+        box.addView(info);
+
+        // বাছাইটা ডায়ালগের ভেতরেই রেডিও তালিকা হিসেবে, আলাদা লিস্ট নয়
+        final RadioGroup group = new RadioGroup(this);
+        group.setOrientation(RadioGroup.VERTICAL);
+        final int[] ids = new int[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            RadioButton rb = new RadioButton(this);
+            rb.setText(labels[i]);
+            rb.setTextSize(14);
+            rb.setTextColor(cText);
+            rb.setPadding(dp(4), dp(9), dp(4), dp(9));
+            rb.setId(View.generateViewId());
+            ids[i] = rb.getId();
+            if (i == 0) rb.setChecked(true);
+            group.addView(rb);
+        }
+        box.addView(group);
+
+        Switch keep = new Switch(this);
+        keep.setText(Lang.t("সবসময় এই পছন্দ"));
+        keep.setTextSize(13);
+        keep.setTextColor(cText);
+        keep.setPadding(0, dp(12), 0, 0);
+        keep.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton b, boolean on) { remember[0] = on; }
+        });
+        box.addView(keep);
+
+        dialog().setTitle(Lang.t("ডাউনলোড করবেন কী দিয়ে?"))
+                .setView(box)
+                .setPositiveButton(Lang.t("ডাউনলোড"), (d, w) -> {
+                    int pick = 0;
+                    for (int i = 0; i < ids.length; i++) {
+                        if (ids[i] == group.getCheckedRadioButtonId()) pick = i;
+                    }
+                    if (remember[0]) {
+                        prefs.edit().putString("dlmgr",
+                                pick == 0 ? "builtin" : apps.get(pick - 1).pkg).apply();
+                    }
+                    if (pick == 0) {
+                        Downloader.start(MainActivity.this, url, ua, cd, mime, len);
+                    } else {
+                        String pkg = apps.get(pick - 1).pkg;
+                        if (!DownloadApps.open(MainActivity.this, pkg, url, mime)) {
+                            toast(Lang.t("ওই অ্যাপে পাঠানো যায়নি, ব্রাউজারেই নামানো হচ্ছে"));
+                            Downloader.start(MainActivity.this, url, ua, cd, mime, len);
+                        }
+                    }
+                })
+                .setNegativeButton(Lang.t("বাতিল"), null)
+                .show();
+    }
+
     /** পেজে থাকা ভিডিও/অডিও/ফাইল খুঁজে বের করে ডাউনলোড করতে দেয় */
     private void downloadMedia() {
         if (current == null) return;
@@ -2469,7 +2706,7 @@ public class MainActivity extends Activity {
                             if (current == null) return;
                             String url = found.get(which)[0];
                             String kind = found.get(which)[1];
-                            Downloader.start(MainActivity.this, url,
+                            askDownload(url,
                                     current.getSettings().getUserAgentString(),
                                     null, mediaMime(url, kind), 0);
                         })
@@ -2994,6 +3231,10 @@ public class MainActivity extends Activity {
                     t.web.stopLoading();
                     t.web.destroy();
                 }
+                if (t.thumb != null) {
+                    t.thumb.recycle();
+                    t.thumb = null;
+                }
             } catch (Exception ignored) { }
         }
         tabs.clear();
@@ -3367,6 +3608,13 @@ public class MainActivity extends Activity {
                     injectPlayer(view);
                     if (darkMode) injectDark(view);
                 }
+                // লোড শেষে ট্যাব-কার্ডের ছবিটা নতুন করে তুলি, যাতে ঝাপসা/খালি না থাকে
+                if (t != null && view == current) {
+                    final Tab shot = t;
+                    view.postDelayed(new Runnable() {
+                        public void run() { captureThumb(shot); }
+                    }, 400);
+                }
             }
 
             @Override
@@ -3532,7 +3780,7 @@ public class MainActivity extends Activity {
 
         web.setDownloadListener(new DownloadListener() {
             public void onDownloadStart(String url, String ua, String cd, String mime, long len) {
-                Downloader.start(MainActivity.this, url, ua, cd, mime, len);
+                askDownload(url, ua, cd, mime, len);
             }
         });
 
@@ -4683,7 +4931,8 @@ public class MainActivity extends Activity {
         String msg = Lang.isEn()
                 ? "Skyble Browser\nVersion " + VERSION + "\n\n"
                 + "Fast, light web browser for Android.\n"
-                + "Tabs, bookmarks, history, downloads, dark mode.\n"
+                + "Square tab grid with page previews, bookmarks, history,\n"
+                + "its own video player, and a choice of download manager.\n"
                 + "English or Bengali interface.\n\n"
                 + "Developer\n"
                 + "Mamun (@Mamun015)\n"
@@ -4696,7 +4945,8 @@ public class MainActivity extends Activity {
                 + "Made in Bangladesh"
                 : "Skyble Browser\nসংস্করণ " + VERSION + "\n\n"
                 + "দ্রুত, হালকা ব্রাউজার।\n"
-                + "ট্যাব, বুকমার্ক, ইতিহাস, ডাউনলোড, রাতের মোড।\n"
+                + "ছবিসহ বর্গাকার ট্যাব গ্রিড, বুকমার্ক, ইতিহাস,\n"
+                + "নিজের ভিডিও প্লেয়ার, আর ডাউনলোডার বাছাইয়ের সুবিধা।\n"
                 + "ইংরেজি বা বাংলা ইন্টারফেস।\n\n"
                 + "নির্মাতা\n"
                 + "মামুন (@Mamun015)\n"

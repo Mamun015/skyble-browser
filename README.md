@@ -11,23 +11,24 @@
 
 **Download page with checksum and install steps: [download](https://mamun015.github.io/skyble-browser/download.html)** · [বাংলা](https://mamun015.github.io/skyble-browser/bn.html)
 
-**Download the latest APK: [SkybleBrowser-1.3.0.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.3.0, Android 5.0+, about 3 MB)
+**Download the latest APK: [SkybleBrowser-1.3.1.apk](https://github.com/Mamun015/skyble-browser/releases/latest)** (version 1.3.1, Android 5.0+, about 3 MB)
 
 A fast, light web browser for Android with a downloader and a video player built
 in. No ads, no tracking, no account. Pages translate themselves as they open,
-and on Android 12+ the palette comes from your wallpaper. Videos from websites
-and from your download list play in the app's own player, YouTube videos save at
-up to 1080p as ordinary MP4 files, and media from other sites lands in the same
-download list. Pages are drawn by the Android System WebView so the engine stays
-current with the phone.
+and on Android 12+ the palette comes from your wallpaper. Tabs show up as a grid
+of page previews, videos from websites and from your download list play in the
+app's own player, YouTube videos save at up to 1080p as ordinary MP4 files, and
+media from other sites lands in the same download list. Downloads can be handed
+to the download app you already use. Pages are drawn by the Android System
+WebView so the engine stays current with the phone.
 
 ## Screenshots
 
 <p>
 <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="200" alt="Start page">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="200" alt="Menu">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="200" alt="Settings">
-<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="200" alt="About">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" width="200" alt="Tab grid with page previews">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="200" alt="Menu">
+<img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="200" alt="Settings">
 </p>
 
 ## Features
@@ -44,6 +45,9 @@ current with the phone.
   Downloads folder
 - A finished download shows a bar with Open, and the notification gets an Open
   action as well
+- Choose which app downloads a file: the built-in downloader or a download
+  manager already on the phone (ADM and similar), remembered if you want, with
+  a download manager row in Settings
 - Optional GPL helper app (`plugin/`) with NewPipeExtractor for the rare video
   the built-in resolver cannot read
 
@@ -58,6 +62,8 @@ current with the phone.
   videos with more than one language; mute
 - Hardware or software decoding, switchable while a video plays, so a video that
   stalls on your chipset still plays
+- The progress bar only moves forward, so it does not jump ahead and back during
+  playback, and swipes near the control bar never start a seek by mistake
 - Media the page hides behind `blob:` gets played too: the app watches the
   network requests the page makes and hands the real stream to the player
 
@@ -72,6 +78,9 @@ current with the phone.
 
 **Browsing**
 - Up to 50 tabs, with a session that comes back after a restart
+- The tab screen is a grid of square cards, each with a picture of the page; a
+  thin border on every card, a thicker accent border on the active tab, and the
+  grid stays open when you close a tab
 - Live search suggestions, plus suggestions from your own history and bookmarks
 - Home speed dial with Google, Facebook, Instagram, Gmail, GitHub, YouTube,
   Stack Overflow and MDN; press and hold a tile to drag it into place or to edit

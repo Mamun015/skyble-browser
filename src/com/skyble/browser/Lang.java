@@ -91,6 +91,13 @@ public class Lang {
         EN.put("ডাউনলোড দেখুন", "View downloads");
         EN.put("ডাউনলোড বাতিল হচ্ছে", "Download cancelled");
         EN.put("ডাউনলোড বাতিল হয়েছে", "Download cancelled");
+        EN.put("ডাউনলোড ম্যানেজার", "Download manager");
+        EN.put("ডাউনলোড করবেন কী দিয়ে?", "Which app should download it?");
+        EN.put("প্রতিবার জিজ্ঞাসা", "Ask every time");
+        EN.put("সবসময় এই পছন্দ", "Always use this");
+        EN.put("Skyble ডাউনলোডার", "Skyble downloader");
+        EN.put("Skyble ডাউনলোডার (ভেতরে)", "Skyble downloader (in-app)");
+        EN.put("ওই অ্যাপে পাঠানো যায়নি, ব্রাউজারেই নামানো হচ্ছে", "Could not hand it to that app, downloading in the browser");
         EN.put("ডাউনলোড শুরু হয়েছে: ", "Download started: ");
         EN.put("ডাউনলোড সম্পন্ন: ", "Download complete: ");
         EN.put("ডাউনলোড সম্পন্ন", "Download complete");

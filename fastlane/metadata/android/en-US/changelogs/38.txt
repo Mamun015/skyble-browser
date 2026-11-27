@@ -1,0 +1,5 @@
+Square tab grid with a picture of every page, a thin border on each card and a thicker one on the active tab. Closing a tab keeps the tab screen open.
+
+Choose your downloader: the built-in one or an app you already have such as ADM, with an option to remember the choice.
+
+The player's progress bar no longer jumps forward and back in landscape, and swipes near the control bar do not start a seek by mistake.

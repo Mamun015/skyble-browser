@@ -247,6 +247,10 @@ public class SettingsActivity extends Activity {
                         }
                     }
                 }));
+        list.addView(row("download", Lang.t("ডাউনলোড ম্যানেজার"), downloaderName(),
+                new Runnable() {
+                    public void run() { pickDownloader(); }
+                }));
         list.addView(row("download", Lang.t("ডাউনলোড দেখুন"), null, new Runnable() {
             public void run() {
                 try {
@@ -500,6 +504,43 @@ public class SettingsActivity extends Activity {
         if (e.equals("ddg")) return "DuckDuckGo";
         if (e.equals("bing")) return "Bing";
         return "Google";
+    }
+
+    /** এখন কোন ডাউনলোডার সেট আছে তার নাম */
+    private String downloaderName() {
+        String v = prefs.getString("dlmgr", "ask");
+        if ("ask".equals(v)) return Lang.t("প্রতিবার জিজ্ঞাসা");
+        if ("builtin".equals(v)) return "Skyble";
+        return DownloadApps.label(this, v);
+    }
+
+    /** ডাউনলোডার বাছাই: প্রতিবার জিজ্ঞাসা / নিজের ডাউনলোডার / ফোনের অন্য অ্যাপ */
+    private void pickDownloader() {
+        final List<DownloadApps.App> apps = DownloadApps.list(this,
+                "https://example.com/file.zip", "application/octet-stream");
+        final String[] names = new String[apps.size() + 2];
+        final String[] keys = new String[apps.size() + 2];
+        names[0] = Lang.t("প্রতিবার জিজ্ঞাসা");
+        keys[0] = "ask";
+        names[1] = Lang.t("Skyble ডাউনলোডার");
+        keys[1] = "builtin";
+        for (int i = 0; i < apps.size(); i++) {
+            names[i + 2] = apps.get(i).label;
+            keys[i + 2] = apps.get(i).pkg;
+        }
+        String now = prefs.getString("dlmgr", "ask");
+        int checked = 0;
+        for (int i = 0; i < keys.length; i++) if (keys[i].equals(now)) checked = i;
+
+        new AlertDialog.Builder(this, dialogTheme())
+                .setTitle(Lang.t("ডাউনলোড ম্যানেজার"))
+                .setSingleChoiceItems(names, checked, (d, which) -> {
+                    prefs.edit().putString("dlmgr", keys[which]).apply();
+                    d.dismiss();
+                    refresh();
+                })
+                .setNegativeButton(Lang.t("বাতিল"), null)
+                .show();
     }
 
     private void pickEngine() {
