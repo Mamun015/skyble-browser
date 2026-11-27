@@ -138,7 +138,7 @@
     <p class="empty" id="empty" data-i18n="empty">Nothing here yet. Type above to start.</p>
   </div>
 
-  <footer data-i18n-html="footer">Skyble Browser <b>1.3.0</b> · Made in Bangladesh</footer>
+  <footer data-i18n-html="footer">Skyble Browser <b data-ver>1.3.1</b> · Made in Bangladesh</footer>
 
 <script>
   var I18N = {
@@ -155,7 +155,7 @@
       removeSite: "এই সাইটটা হোম থেকে সরাবেন?",
       addSite: "সাইট যোগ", edit: "এডিট", remove: "মুছুন", cancel: "বাতিল",
       moveHint: "চেপে ধরে টেনে সরান, আর ট্যাপে এডিট/মুছুন",
-      footer: "Skyble Browser <b>1.3.0</b> · Made in Bangladesh",
+      footer: "Skyble Browser <b data-ver></b> · Made in Bangladesh",
       t1: "প্রথম আলো", t2: "কালের কণ্ঠ", t3: "বিডিনিউজ", t4: "উইকিপিডিয়া",
       t5: "ইউটিউব", t6: "ফেসবুক", t7: "জিমেইল", t8: "বাংলানিউজ"
     },
@@ -172,7 +172,7 @@
       removeSite: "Remove this site from the home grid?",
       addSite: "Add site", edit: "Edit", remove: "Delete", cancel: "Cancel",
       moveHint: "Press and hold, then drag to move. Tap for edit or delete.",
-      footer: "Skyble Browser <b>1.3.0</b> · Made in Bangladesh",
+      footer: "Skyble Browser <b data-ver></b> · Made in Bangladesh",
       t1: "Prothom Alo", t2: "Kaler Kantho", t3: "BDNews24", t4: "Wikipedia",
       t5: "YouTube", t6: "Facebook", t7: "Gmail", t8: "Banglanews"
     }
@@ -222,6 +222,19 @@
         "--shadow", dark ? "none" : "0 1px 2px rgba(0,0,0,.06)");
   }
 
+  // ফুটারের ভার্সনটা অ্যাপ নিজে পাঠায়, তাই নতুন রিলিজে home.html বদলাতে হয় না
+  var VER = "1.3.1";
+
+  window.setVersion = function (v) {
+    if (v) VER = String(v);
+    paintVer();
+  };
+
+  function paintVer() {
+    var n = document.querySelectorAll("[data-ver]");
+    for (var i = 0; i < n.length; i++) n[i].textContent = VER;
+  }
+
   function applyLang() {
     var d = I18N[LANG] || I18N.en;
     document.documentElement.lang = LANG;
@@ -244,6 +257,7 @@
     document.title = d.title;
     var logo = document.getElementById("logo");
     if (logo) logo.setAttribute("alt", d.brand);
+    paintVer();
     fitNames(document.getElementById("tiles"));
   }
 

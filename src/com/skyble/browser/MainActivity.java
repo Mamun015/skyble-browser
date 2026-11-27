@@ -2423,6 +2423,13 @@ public class MainActivity extends Activity {
         view.evaluateJavascript(js, null);
     }
 
+    /** ফুটারের ভার্সনটা প্যাকেজ থেকেই পাঠায়, যাতে হোম পাতায় পুরোনো নম্বর না থাকে */
+    private void injectVersion(WebView view) {
+        if (view == null) return;
+        view.evaluateJavascript("window.setVersion && window.setVersion('"
+                + VERSION.replace("'", "") + "');", null);
+    }
+
     private void injectSites(WebView view) {
         if (view == null) return;
         JSONArray arr = new JSONArray();
@@ -3599,6 +3606,7 @@ public class MainActivity extends Activity {
                 if (view == current) updateTubePill(url);
                 if (url != null && url.startsWith(HOME_URL)) {
                     injectTheme(view);
+                    injectVersion(view);
                     injectSites(view);
                     injectRecent(view);
                 }
@@ -4934,6 +4942,19 @@ public class MainActivity extends Activity {
                 + "Square tab grid with page previews, bookmarks, history,\n"
                 + "its own video player, and a choice of download manager.\n"
                 + "English or Bengali interface.\n\n"
+                + "YouTube video download\n"
+                + "On a YouTube video page one tap lists the qualities up to\n"
+                + "1080p with their file sizes. High qualities arrive as\n"
+                + "separate picture and sound tracks and are joined on the\n"
+                + "phone into one normal MP4 that plays in any gallery or\n"
+                + "video app. Other sites give MP4, WebM, MKV, MP3, M4A and\n"
+                + "plain files, all in the same download list.\n\n"
+                + "Ad and tracker blocking\n"
+                + "Known advertising and tracker hosts are blocked before the\n"
+                + "request leaves the phone: doubleclick, googleadservices,\n"
+                + "taboola, outbrain, adsterra and more. No analytics, no\n"
+                + "telemetry, no advertising SDK. Ad popups that try to take\n"
+                + "over a tab are dropped.\n\n"
                 + "Developer\n"
                 + "Mamun (@Mamun015)\n"
                 + "github.com/Mamun015\n\n"
@@ -4948,6 +4969,19 @@ public class MainActivity extends Activity {
                 + "ছবিসহ বর্গাকার ট্যাব গ্রিড, বুকমার্ক, ইতিহাস,\n"
                 + "নিজের ভিডিও প্লেয়ার, আর ডাউনলোডার বাছাইয়ের সুবিধা।\n"
                 + "ইংরেজি বা বাংলা ইন্টারফেস।\n\n"
+                + "ইউটিউব ভিডিও ডাউনলোড\n"
+                + "ইউটিউব ভিডিও পেজে এক চাপে কোয়ালিটির তালিকা আসে,\n"
+                + "১০৮০p পর্যন্ত, প্রতিটার সাইজ লেখা সহ। বড় কোয়ালিটির\n"
+                + "ছবি আর শব্দ আলাদা এলে অ্যাপ নিজেই জোড়া লাগিয়ে এক\n"
+                + "সাধারণ MP4 বানায়, যেটা যেকোনো গ্যালারি বা ভিডিও\n"
+                + "অ্যাপে চলে। অন্য সাইটের MP4, WebM, MKV, MP3, M4A আর\n"
+                + "সাধারণ ফাইলও একই ডাউনলোড তালিকায় আসে।\n\n"
+                + "বিজ্ঞাপন ও ট্র্যাকার ব্লক\n"
+                + "জানা বিজ্ঞাপন ও ট্র্যাকার সার্ভারের অনুরোধ ফোন\n"
+                + "ছোড়ার আগেই আটকে যায়: doubleclick, googleadservices,\n"
+                + "taboola, outbrain, adsterra ইত্যাদি। কোনো অ্যানালিটিক্স\n"
+                + "নেই, টেলিমেট্রি নেই, বিজ্ঞাপনের SDK নেই। ট্যাব দখল\n"
+                + "করতে চাওয়া বিজ্ঞাপন পপআপও বাদ পড়ে।\n\n"
                 + "নির্মাতা\n"
                 + "মামুন (@Mamun015)\n"
                 + "github.com/Mamun015\n\n"
